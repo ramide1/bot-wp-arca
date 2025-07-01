@@ -1,6 +1,5 @@
 import { FEParamGetPtosVenta, FEParamGetTiposCbte, FEParamGetTiposConcepto, FEParamGetTiposDoc, FEParamGetTiposIva, FEParamGetTiposMonedas, FEParamGetCotizacion, FECompUltimoAutorizado, FECompConsultar, FECAESolicitar } from "./arca";
-import { saveYaml, loadYaml, saveBase64, saveResponse } from './file';
-import { callAi } from "./ai";
+import { saveYaml, loadYaml, saveBase64, loadHistory, saveHistory } from './file';
 
 const configuracion = async (messageArray: any[], yamlFile: string, yamlData: any, userDir: string, message: any) => {
     try {
@@ -348,6 +347,70 @@ const commandMessage = async (message: any, messageText: string, userDir: string
     }
 };
 
+const callAi = async (options: any, message: string, username: string) => {
+    const userHistory = loadHistory(username, options.historyFile);
+    const messages = [
+        { role: options.googleApi ? 'user' : 'system', content: options.instructions }
+    ];
+    userHistory.forEach((entry: any) => {
+        messages.push({ role: 'user', content: entry.message });
+        messages.push({ role: options.googleApi ? 'model' : 'assistant', content: entry.response });
+    });
+    messages.push({ role: 'user', content: message });
+    let responseText = '';
+    if (options.googleApi) {
+        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + options.model + ':generateContent?key=' + options.apiKey, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                contents: messages.map(msg => (
+                    {
+                        role: msg.role,
+                        parts: [
+                            {
+                                text: msg.content
+                            }
+                        ]
+                    }
+                )),
+                generationConfig: {
+                    maxOutputTokens: options.maxTokens
+                }
+            })
+        });
+        if (!response.ok) {
+            return { error: true, message: 'Respuesta fallida del API' };
+        }
+        const data = await response.json();
+        responseText = data.candidates[0].content.parts[0].text || '';
+    } else {
+        const response = await fetch(options.url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + options.apiKey
+            },
+            body: JSON.stringify({
+                model: options.model,
+                messages,
+                max_tokens: options.maxTokens
+            })
+        });
+        if (!response.ok) {
+            return { error: true, message: 'Respuesta fallida del API' };
+        }
+        const data = await response.json();
+        responseText = data.choices[0].message.content || '';
+    }
+    if (responseText !== '') {
+        saveHistory(username, options.historyFile, message, responseText);
+        return { error: false, message: responseText };
+    }
+    return { error: true, message: 'Respuesta fallida del API' };
+};
+
 const processMessage = async (options: any, user: string, message: any) => {
     try {
         let responseText = 'Error al obtener respuesta. Intentá nuevamente más tarde.';
@@ -361,16 +424,16 @@ const processMessage = async (options: any, user: string, message: any) => {
             const aiResponse = await callAi(options, messageText, user);
             if (aiResponse && !aiResponse.error) {
                 if (aiResponse.message.includes(options.commandPrefix)) {
-                    const aiCommand = aiResponse.message.replace(options.commandPrefix, '').trim().toLowerCase();
+                    const aiCommand = aiResponse.message.split(options.commandPrefix)[1].trim().toLowerCase();
                     const aiArray = aiCommand.split(' ');
                     responseText = await commandMessage(message, aiCommand, userDir, yamlFile, yamlData, aiArray);
-                    saveResponse(user, options.historyFile, responseText);
+                    saveHistory(user, options.historyFile, 'Respuesta devuelta por Arca: \n' + responseText, 'Datos confirmados.');
                 } else {
                     responseText = aiResponse.message;
                 }
             }
         } else {
-            saveResponse(user, options.historyFile, responseText);
+            saveHistory(user, options.historyFile, messageText, responseText);
         }
         return responseText;
     } catch (error: any) {

@@ -30,6 +30,7 @@ Eres un asistente especializado en trámites de ARCA (Agencia de Recaudación y 
 
 2. **Estilo de comunicación**:
    - Tono profesional pero amigable
+   - Usar emojis cuando se pueda
    - Confirma explícitamente cada paso antes de ejecutar
    - Si detectas confusión: ofrece ayuda con "ayuda"
 
@@ -67,8 +68,7 @@ ${commandPrefix} [comando] [parámetros]
                        Solicitar siguiente dato
 
 3. **Manejo de errores**:
-   - Si el comando requiere parámetros faltantes: solicitarlos uno a uno
-   - Si los certificados no están configurados: detener proceso y pedirlos`
+   - Si el comando requiere parámetros faltantes: solicitarlos uno a uno`
 };
 
 const client = new Client({
@@ -77,7 +77,7 @@ const client = new Client({
 });
 
 client.once('ready', () => {
-    console.log('Client is ready!');
+    console.log('El cliente esta listo!');
 });
 
 client.on('qr', (qr) => {
@@ -91,7 +91,7 @@ client.on('message_create', async (message) => {
     if ((Date.now() - lastSentTimestamp[user]) < options.cooldownTime) return;
     try {
         const messageResponse = await processMessage(options, user, message);
-        if (!messageResponse) throw new Error('Response failed');
+        if (!messageResponse) throw new Error('Respuesta fallida');
         client.sendMessage(message.from, messageResponse);
     } catch (error: any) {
         console.error(error.message);

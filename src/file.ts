@@ -16,7 +16,7 @@ const saveYaml = (yamlFile: string, jsonData: any) => {
 
 const loadYaml = (yamlFile: string) => {
     try {
-        if (!existsSync(yamlFile)) throw new Error('File not exists');
+        if (!existsSync(yamlFile)) throw new Error('El archivo no existe');
         const fileContent = readFileSync(yamlFile, 'utf8');
         return parse(fileContent);
     } catch (error: any) {
@@ -59,8 +59,4 @@ const loadHistory = (username: string, historyFile: string) => {
     return [];
 };
 
-const saveResponse = (username: string, historyFile: string, response: string) => {
-    saveHistory(username, historyFile, 'Respuesta devuelta por Arca: \n' + response, 'Datos confirmados.');
-};
-
-export { saveYaml, loadYaml, saveBase64, saveHistory, loadHistory, saveResponse };
+export { saveYaml, loadYaml, saveBase64, saveHistory, loadHistory };

@@ -36,7 +36,7 @@ const functionAttempts = async (functionAttempt: any) => {
 
 const checkWsdl = (wsdlFile: string) => {
     try {
-        if (!existsSync(wsdlFile)) throw new Error('Wsdl file not found');
+        if (!existsSync(wsdlFile)) throw new Error('Archivo Wsdl no encontrado');
         const stats = statSync(wsdlFile);
         const fileDate = stats.mtime;
         const oneYearAgo = new Date();
@@ -50,7 +50,7 @@ const checkWsdl = (wsdlFile: string) => {
 const downloadWsdl = async (wsdlFile: string, wsdlUrl: string) => {
     return await functionAttempts(async () => {
         const response = await fetch(wsdlUrl, { method: 'GET' });
-        if (!response.ok) throw new Error('Response was not ok');
+        if (!response.ok) throw new Error('Error al obtener respuesta');
         const file = Buffer.from(await response.arrayBuffer());
         writeFileSync(wsdlFile, file);
         return true;
@@ -85,9 +85,9 @@ const signTra = (service: string, currentDir: string, currentEnviroment: string)
         const certFile = currentDir + webservice.wsaa.cert;
         const keyFile = currentDir + webservice.wsaa.privatekey;
         const password = webservice.wsaa.password;
-        if (!existsSync(inputFile)) throw new Error('Input file not found');
-        if (!existsSync(certFile)) throw new Error('Certificate file not found');
-        if (!existsSync(keyFile)) throw new Error('Private key file not found');
+        if (!existsSync(inputFile)) throw new Error('Archivo de entrada no encontrado');
+        if (!existsSync(certFile)) throw new Error('Archivo de certificado no encontrado');
+        if (!existsSync(keyFile)) throw new Error('Archivo de clave privada no encontrado');
         execSync('openssl cms -sign -in ' + inputFile + ' -out ' + outputFile + ' -signer ' + certFile + ' -inkey ' + keyFile + ' -nodetach -outform DER -nosmimecap' + ((password != '') ? (' -passin pass:' + password) : ''));
         const cms = readFileSync(outputFile, 'base64');
         unlinkSync(outputFile);
@@ -102,7 +102,7 @@ const getSoapClient = async (service: string, currentDir: string) => {
         const currentEnviroment = (webservice.test == 'false') ? 'prod' : 'test';
         const serviceConfig = webservice[service as keyof typeof webservice];
         const wsdlFile = currentDir + service + '_' + currentEnviroment + '.wsdl';
-        if (!checkWsdl(wsdlFile) && !(await downloadWsdl(wsdlFile, serviceConfig[currentEnviroment as keyof typeof serviceConfig] + '?wsdl'))) throw new Error('Error downloading wsdl');
+        if (!checkWsdl(wsdlFile) && !(await downloadWsdl(wsdlFile, serviceConfig[currentEnviroment as keyof typeof serviceConfig] + '?wsdl'))) throw new Error('Error descargando wsdl');
         const client = await createClientAsync(wsdlFile);
         return client;
     });
@@ -112,9 +112,9 @@ const callWsaa = async (cms: any, currentDir: string) => {
     return await functionAttempts(async () => {
         const service = 'wsaa';
         const client = await getSoapClient(service, currentDir);
-        if (!client) throw new Error('Error creating ' + service + ' client');
+        if (!client) throw new Error('Error creando cliente ' + service);
         const result = await client.loginCmsAsync({ in0: cms });
-        if (result[0].faultcode) throw new Error('SOAP Fault: ' + result[0].faultcode + ' ' + result[0].faultstring);
+        if (result[0].faultcode) throw new Error('Error de SOAP: ' + result[0].faultcode + ' ' + result[0].faultstring);
         return result[0];
     });
 };
@@ -127,11 +127,11 @@ const getTa = async (service: string, currentDir: string) => {
             const taObject = convert(readFileSync(taFile, 'utf8'), { format: 'object' }) as any;
             if ((new Date(taObject.loginTicketResponse.header.expirationTime)) > (new Date())) return taObject;
         }
-        if (!createTra(service, currentDir, currentEnviroment)) throw new Error('Error creating TRA');
+        if (!createTra(service, currentDir, currentEnviroment)) throw new Error('Error creando TRA');
         const cms = signTra(service, currentDir, currentEnviroment);
-        if (!cms) throw new Error('Error signing TRA');
+        if (!cms) throw new Error('Error firmando TRA');
         const ta = (await callWsaa(cms, currentDir)).loginCmsReturn;
-        if (!ta) throw new Error('Error calling WSAA');
+        if (!ta) throw new Error('Error llamando WSAA');
         writeFileSync(taFile, ta);
         return convert(ta, { format: 'object' }) as any;
     });
@@ -141,9 +141,9 @@ const FEParamGetPtosVenta = async (cuit: string, currentDir: string) => {
     return await functionAttempts(async () => {
         const service = 'wsfe';
         const ta = await getTa(service, currentDir);
-        if (!ta) throw new Error('Error getting TA');
+        if (!ta) throw new Error('Error obteniendo TA');
         const client = await getSoapClient(service, currentDir);
-        if (!client) throw new Error('Error creating ' + service + ' client');
+        if (!client) throw new Error('Error creando cliente ' + service);
         const result = await client.FEParamGetPtosVentaAsync({
             'Auth': {
                 'Token': ta.loginTicketResponse.credentials.token,
@@ -151,7 +151,7 @@ const FEParamGetPtosVenta = async (cuit: string, currentDir: string) => {
                 'Cuit': cuit
             }
         });
-        if (result[0].faultcode) throw new Error('SOAP Fault: ' + result[0].faultcode + ' ' + result[0].faultstring);
+        if (result[0].faultcode) throw new Error('Error de SOAP: ' + result[0].faultcode + ' ' + result[0].faultstring);
         return result[0];
     });
 };
@@ -160,9 +160,9 @@ const FEParamGetTiposCbte = async (cuit: string, currentDir: string) => {
     return await functionAttempts(async () => {
         const service = 'wsfe';
         const ta = await getTa(service, currentDir);
-        if (!ta) throw new Error('Error getting TA');
+        if (!ta) throw new Error('Error obteniendo TA');
         const client = await getSoapClient(service, currentDir);
-        if (!client) throw new Error('Error creating ' + service + ' client');
+        if (!client) throw new Error('Error creando cliente ' + service);
         const result = await client.FEParamGetTiposCbteAsync({
             'Auth': {
                 'Token': ta.loginTicketResponse.credentials.token,
@@ -170,7 +170,7 @@ const FEParamGetTiposCbte = async (cuit: string, currentDir: string) => {
                 'Cuit': cuit
             }
         });
-        if (result[0].faultcode) throw new Error('SOAP Fault: ' + result[0].faultcode + ' ' + result[0].faultstring);
+        if (result[0].faultcode) throw new Error('Error de SOAP: ' + result[0].faultcode + ' ' + result[0].faultstring);
         return result[0];
     });
 };
@@ -179,9 +179,9 @@ const FEParamGetTiposConcepto = async (cuit: string, currentDir: string) => {
     return await functionAttempts(async () => {
         const service = 'wsfe';
         const ta = await getTa(service, currentDir);
-        if (!ta) throw new Error('Error getting TA');
+        if (!ta) throw new Error('Error obteniendo TA');
         const client = await getSoapClient(service, currentDir);
-        if (!client) throw new Error('Error creating ' + service + ' client');
+        if (!client) throw new Error('Error creando cliente ' + service);
         const result = await client.FEParamGetTiposConceptoAsync({
             'Auth': {
                 'Token': ta.loginTicketResponse.credentials.token,
@@ -189,7 +189,7 @@ const FEParamGetTiposConcepto = async (cuit: string, currentDir: string) => {
                 'Cuit': cuit
             }
         });
-        if (result[0].faultcode) throw new Error('SOAP Fault: ' + result[0].faultcode + ' ' + result[0].faultstring);
+        if (result[0].faultcode) throw new Error('Error de SOAP: ' + result[0].faultcode + ' ' + result[0].faultstring);
         return result[0];
     });
 };
@@ -198,9 +198,9 @@ const FEParamGetTiposDoc = async (cuit: string, currentDir: string) => {
     return await functionAttempts(async () => {
         const service = 'wsfe';
         const ta = await getTa(service, currentDir);
-        if (!ta) throw new Error('Error getting TA');
+        if (!ta) throw new Error('Error obteniendo TA');
         const client = await getSoapClient(service, currentDir);
-        if (!client) throw new Error('Error creating ' + service + ' client');
+        if (!client) throw new Error('Error creando cliente ' + service);
         const result = await client.FEParamGetTiposDocAsync({
             'Auth': {
                 'Token': ta.loginTicketResponse.credentials.token,
@@ -208,7 +208,7 @@ const FEParamGetTiposDoc = async (cuit: string, currentDir: string) => {
                 'Cuit': cuit
             }
         });
-        if (result[0].faultcode) throw new Error('SOAP Fault: ' + result[0].faultcode + ' ' + result[0].faultstring);
+        if (result[0].faultcode) throw new Error('Error de SOAP: ' + result[0].faultcode + ' ' + result[0].faultstring);
         return result[0];
     });
 };
@@ -217,9 +217,9 @@ const FEParamGetTiposIva = async (cuit: string, currentDir: string) => {
     return await functionAttempts(async () => {
         const service = 'wsfe';
         const ta = await getTa(service, currentDir);
-        if (!ta) throw new Error('Error getting TA');
+        if (!ta) throw new Error('Error obteniendo TA');
         const client = await getSoapClient(service, currentDir);
-        if (!client) throw new Error('Error creating ' + service + ' client');
+        if (!client) throw new Error('Error creando cliente ' + service);
         const result = await client.FEParamGetTiposIvaAsync({
             'Auth': {
                 'Token': ta.loginTicketResponse.credentials.token,
@@ -227,7 +227,7 @@ const FEParamGetTiposIva = async (cuit: string, currentDir: string) => {
                 'Cuit': cuit
             }
         });
-        if (result[0].faultcode) throw new Error('SOAP Fault: ' + result[0].faultcode + ' ' + result[0].faultstring);
+        if (result[0].faultcode) throw new Error('Error de SOAP: ' + result[0].faultcode + ' ' + result[0].faultstring);
         return result[0];
     });
 };
@@ -236,9 +236,9 @@ const FEParamGetTiposMonedas = async (cuit: string, currentDir: string) => {
     return await functionAttempts(async () => {
         const service = 'wsfe';
         const ta = await getTa(service, currentDir);
-        if (!ta) throw new Error('Error getting TA');
+        if (!ta) throw new Error('Error obteniendo TA');
         const client = await getSoapClient(service, currentDir);
-        if (!client) throw new Error('Error creating ' + service + ' client');
+        if (!client) throw new Error('Error creando cliente ' + service);
         const result = await client.FEParamGetTiposMonedasAsync({
             'Auth': {
                 'Token': ta.loginTicketResponse.credentials.token,
@@ -246,7 +246,7 @@ const FEParamGetTiposMonedas = async (cuit: string, currentDir: string) => {
                 'Cuit': cuit
             }
         });
-        if (result[0].faultcode) throw new Error('SOAP Fault: ' + result[0].faultcode + ' ' + result[0].faultstring);
+        if (result[0].faultcode) throw new Error('Error de SOAP: ' + result[0].faultcode + ' ' + result[0].faultstring);
         return result[0];
     });
 };
@@ -255,9 +255,9 @@ const FEParamGetTiposOpcional = async (cuit: string, currentDir: string) => {
     return await functionAttempts(async () => {
         const service = 'wsfe';
         const ta = await getTa(service, currentDir);
-        if (!ta) throw new Error('Error getting TA');
+        if (!ta) throw new Error('Error obteniendo TA');
         const client = await getSoapClient(service, currentDir);
-        if (!client) throw new Error('Error creating ' + service + ' client');
+        if (!client) throw new Error('Error creando cliente ' + service);
         const result = await client.FEParamGetTiposOpcionalAsync({
             'Auth': {
                 'Token': ta.loginTicketResponse.credentials.token,
@@ -265,7 +265,7 @@ const FEParamGetTiposOpcional = async (cuit: string, currentDir: string) => {
                 'Cuit': cuit
             }
         });
-        if (result[0].faultcode) throw new Error('SOAP Fault: ' + result[0].faultcode + ' ' + result[0].faultstring);
+        if (result[0].faultcode) throw new Error('Error de SOAP: ' + result[0].faultcode + ' ' + result[0].faultstring);
         return result[0];
     });
 };
@@ -274,9 +274,9 @@ const FEParamGetTiposTributos = async (cuit: string, currentDir: string) => {
     return await functionAttempts(async () => {
         const service = 'wsfe';
         const ta = await getTa(service, currentDir);
-        if (!ta) throw new Error('Error getting TA');
+        if (!ta) throw new Error('Error obteniendo TA');
         const client = await getSoapClient(service, currentDir);
-        if (!client) throw new Error('Error creating ' + service + ' client');
+        if (!client) throw new Error('Error creando cliente ' + service);
         const result = await client.FEParamGetTiposTributosAsync({
             'Auth': {
                 'Token': ta.loginTicketResponse.credentials.token,
@@ -284,7 +284,7 @@ const FEParamGetTiposTributos = async (cuit: string, currentDir: string) => {
                 'Cuit': cuit
             }
         });
-        if (result[0].faultcode) throw new Error('SOAP Fault: ' + result[0].faultcode + ' ' + result[0].faultstring);
+        if (result[0].faultcode) throw new Error('Error de SOAP: ' + result[0].faultcode + ' ' + result[0].faultstring);
         return result[0];
     });
 };
@@ -293,9 +293,9 @@ const FEParamGetCotizacion = async (cuit: string, currentDir: string, monId: str
     return await functionAttempts(async () => {
         const service = 'wsfe';
         const ta = await getTa(service, currentDir);
-        if (!ta) throw new Error('Error getting TA');
+        if (!ta) throw new Error('Error obteniendo TA');
         const client = await getSoapClient(service, currentDir);
-        if (!client) throw new Error('Error creating ' + service + ' client');
+        if (!client) throw new Error('Error creando cliente ' + service);
         const dateCurrent = (currentDate != '') ? (new Date(currentDate)) : (new Date());
         const currentYear = dateCurrent.getFullYear().toString();
         const currentMonth = (dateCurrent.getMonth() + 1).toString().padStart(2, '0');
@@ -309,7 +309,7 @@ const FEParamGetCotizacion = async (cuit: string, currentDir: string, monId: str
             'MonId': monId,
             'FchCotiz': currentYear + currentMonth + currentDay
         });
-        if (result[0].faultcode) throw new Error('SOAP Fault: ' + result[0].faultcode + ' ' + result[0].faultstring);
+        if (result[0].faultcode) throw new Error('Error de SOAP: ' + result[0].faultcode + ' ' + result[0].faultstring);
         return result[0];
     });
 };
@@ -318,9 +318,9 @@ const FECompUltimoAutorizado = async (cuit: string, currentDir: string) => {
     return await functionAttempts(async () => {
         const service = 'wsfe';
         const ta = await getTa(service, currentDir);
-        if (!ta) throw new Error('Error getting TA');
+        if (!ta) throw new Error('Error obteniendo TA');
         const client = await getSoapClient(service, currentDir);
-        if (!client) throw new Error('Error creating ' + service + ' client');
+        if (!client) throw new Error('Error creando cliente ' + service);
         const result = await client.FECompUltimoAutorizadoAsync({
             'Auth': {
                 'Token': ta.loginTicketResponse.credentials.token,
@@ -328,7 +328,7 @@ const FECompUltimoAutorizado = async (cuit: string, currentDir: string) => {
                 'Cuit': cuit
             }
         });
-        if (result[0].faultcode) throw new Error('SOAP Fault: ' + result[0].faultcode + ' ' + result[0].faultstring);
+        if (result[0].faultcode) throw new Error('Error de SOAP: ' + result[0].faultcode + ' ' + result[0].faultstring);
         return result[0];
     });
 };
@@ -337,9 +337,9 @@ const FECompConsultar = async (cuit: string, currentDir: string) => {
     return await functionAttempts(async () => {
         const service = 'wsfe';
         const ta = await getTa(service, currentDir);
-        if (!ta) throw new Error('Error getting TA');
+        if (!ta) throw new Error('Error obteniendo TA');
         const client = await getSoapClient(service, currentDir);
-        if (!client) throw new Error('Error creating ' + service + ' client');
+        if (!client) throw new Error('Error creando cliente ' + service);
         const result = await client.FECompConsultarAsync({
             'Auth': {
                 'Token': ta.loginTicketResponse.credentials.token,
@@ -347,7 +347,7 @@ const FECompConsultar = async (cuit: string, currentDir: string) => {
                 'Cuit': cuit
             }
         });
-        if (result[0].faultcode) throw new Error('SOAP Fault: ' + result[0].faultcode + ' ' + result[0].faultstring);
+        if (result[0].faultcode) throw new Error('Error de SOAP: ' + result[0].faultcode + ' ' + result[0].faultstring);
         return result[0];
     });
 };
@@ -356,9 +356,9 @@ const FECAESolicitar = async (cuit: string, currentDir: string, options: any) =>
     return await functionAttempts(async () => {
         const service = 'wsfe';
         const ta = await getTa(service, currentDir);
-        if (!ta) throw new Error('Error getting TA');
+        if (!ta) throw new Error('Error obteniendo TA');
         const client = await getSoapClient(service, currentDir);
-        if (!client) throw new Error('Error creating ' + service + ' client');
+        if (!client) throw new Error('Error creando cliente ' + service);
         const result = await client.FECAESolicitarAsync({
             'Auth': {
                 'Token': ta.loginTicketResponse.credentials.token,
@@ -367,7 +367,7 @@ const FECAESolicitar = async (cuit: string, currentDir: string, options: any) =>
             },
             'FeCAEReq': options
         });
-        if (result[0].faultcode) throw new Error('SOAP Fault: ' + result[0].faultcode + ' ' + result[0].faultstring);
+        if (result[0].faultcode) throw new Error('Error de SOAP: ' + result[0].faultcode + ' ' + result[0].faultstring);
         return result[0];
     });
 };
