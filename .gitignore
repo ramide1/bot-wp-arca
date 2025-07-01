@@ -137,3 +137,4 @@ webservice
 *.crt
 *.key
 *.wsdl
+*.yml
