@@ -420,20 +420,25 @@ const processMessage = async (options: any, user: string, message: any) => {
         const yamlData = loadYaml(yamlFile) || {};
         const messageArray = messageText.split(' ');
         responseText = await commandMessage(message, messageText, userDir, yamlFile, yamlData, messageArray);
-        if (!responseText) {
-            const aiResponse = await callAi(options, messageText, user);
-            if (aiResponse && !aiResponse.error) {
-                if (aiResponse.message.includes(options.commandPrefix)) {
-                    const aiCommand = aiResponse.message.split(options.commandPrefix)[1].trim().toLowerCase();
-                    const aiArray = aiCommand.split(' ');
-                    responseText = await commandMessage(message, aiCommand, userDir, yamlFile, yamlData, aiArray);
-                    saveHistory(user, options.historyFile, 'Respuesta devuelta por Arca: \n' + responseText, 'Datos confirmados.');
-                } else {
-                    responseText = aiResponse.message;
+        if (options.useAi) {
+            if (!responseText) {
+                const aiResponse = await callAi(options, messageText, user);
+                if (aiResponse && !aiResponse.error) {
+                    if (aiResponse.message.includes(options.commandPrefix)) {
+                        const aiResponseArray = aiResponse.message.split(options.commandPrefix);
+                        const aiCommand = aiResponseArray[aiResponseArray.length - 1].trim().toLowerCase();
+                        const aiArray = aiCommand.split(' ');
+                        responseText = await commandMessage(message, aiCommand, userDir, yamlFile, yamlData, aiArray);
+                        saveHistory(user, options.historyFile, 'Respuesta devuelta por Arca: \n' + responseText, 'Respuesta confirmada.');
+                    } else {
+                        responseText = aiResponse.message;
+                    }
                 }
+            } else {
+                saveHistory(user, options.historyFile, messageText, responseText);
             }
         } else {
-            saveHistory(user, options.historyFile, messageText, responseText);
+            if (!responseText) throw new Error('Comando no reconocido. Envía "ayuda" para ver opciones.');
         }
         return responseText;
     } catch (error: any) {
