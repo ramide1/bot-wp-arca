@@ -1,5 +1,6 @@
 import { Client, LocalAuth } from 'whatsapp-web.js';
 import { processMessage } from './message';
+import { saveYaml, loadYaml } from './file';
 import express from 'express';
 import qrcode from 'qrcode';
 import 'dotenv/config';
@@ -52,9 +53,65 @@ Manejo de errores:
 - Si el comando requiere parámetros faltantes solicitarlos uno a uno`
 };
 const appPort: number = parseInt((process.env.APPPORT !== undefined) ? process.env.APPPORT : '3000');
-//const appMasterKey: string = (process.env.MASTERKEY !== undefined) ? process.env.MASTERKEY : '';
+const appMasterKey: string = (process.env.MASTERKEY !== undefined) ? process.env.MASTERKEY : '';
 const apiEndpoint: string = (process.env.APIENDPOINT !== undefined) ? process.env.APIENDPOINT : 'api/';
+const clientsFile: string = (process.env.CLIENTSFILE !== undefined) ? process.env.CLIENTSFILE : 'clients.yml';
+const onlyUserMessages = ((process.env.ONLYUSERMESSAGES !== undefined) && (process.env.ONLYUSERMESSAGES === 'true')) ? true : false;
 const appSessions: any = {};
+const createClient = (uuid: string, save: boolean = true) => {
+    try {
+        appSessions[uuid] = {
+            client: null,
+            image: false,
+            lastsenttimestamp: []
+        };
+        appSessions[uuid].client = new Client({
+            authStrategy: new LocalAuth({ clientId: uuid }),
+            puppeteer: { headless: true }
+        });
+
+        appSessions[uuid].client.on('qr', async (qr: any) => {
+            appSessions[uuid].image = await qrcode.toDataURL(qr);
+        });
+
+        appSessions[uuid].client.on('message_create', async (message: any) => {
+            if (onlyUserMessages && (!message.fromMe || (message.to != message.from))) return;
+            const user = message.from.split('@')[0];
+            if (appSessions[uuid].lastsenttimestamp[user] === undefined) appSessions[uuid].lastsenttimestamp[user] = 0;
+            if ((Date.now() - appSessions[uuid].lastsenttimestamp[user]) < options.cooldownTime) return;
+            try {
+                const messageResponse = await processMessage(options, user, message);
+                if (!messageResponse) throw new Error('Respuesta fallida');
+                appSessions[uuid].client.sendMessage(message.from, messageResponse);
+            } catch (error: any) {
+                appSessions[uuid].client.sendMessage(message.from, error.message);
+            }
+            appSessions[uuid].lastsenttimestamp[user] = Date.now();
+        });
+
+        appSessions[uuid].client.initialize();
+        if (save) {
+            const savedClients = loadYaml(clientsFile) || [];
+            savedClients.push(uuid);
+            if (!saveYaml(clientsFile, savedClients)) throw new Error('Error al guardar el cliente.');
+        }
+        return true;
+    } catch (error: any) {
+        appSessions[uuid] = undefined;
+        return false;
+    }
+};
+const deleteClient = (uuid: string) => {
+    try {
+        const savedClients = loadYaml(clientsFile) || [];
+        const newData = savedClients.filter((client: string) => client != uuid);
+        if (!saveYaml(clientsFile, newData)) throw new Error('Error al borrar el cliente.');
+        appSessions[uuid] = undefined;
+        return true;
+    } catch (error: any) {
+        return false;
+    }
+};
 const app: any = express();
 app.use(express.json());
 
@@ -175,23 +232,8 @@ app.get('/', (_req: any, res: any) => {
                 document.getElementById('status').className = 'status error';
             }
         };
-        document.getElementById('newBotBtn').addEventListener('click', async () => {
-            if (uuid) {
-                const response = await fetch('/' + '${apiEndpoint}' + 'delete', {
-                    method: 'POST',
-                    headers: { 'Content-type': 'application/json;charset=UTF-8' },
-                    body: JSON.stringify({
-                        uuid: uuid
-                    })
-                });
-                const data = await response.json();
-                document.getElementById('status').textContent = data.message;
-                if (!data.error) {
-                    window.location.reload();
-                } else {
-                    document.getElementById('status').className = 'status error';
-                }
-            }
+        document.getElementById('newBotBtn').addEventListener('click', () => {
+            window.location.reload();
         });
         checkStatusInterval = setInterval(checkStatus, 1000);
         createClient();
@@ -203,38 +245,9 @@ app.get('/', (_req: any, res: any) => {
 app.post('/' + apiEndpoint + 'create', (_req: any, res: any) => {
     const uuid = Date.now().toString(36) + Math.random().toString(36).substr(2);
     try {
-        appSessions[uuid] = {
-            client: null,
-            image: false,
-            lastsenttimestamp: []
-        };
-        appSessions[uuid].client = new Client({
-            authStrategy: new LocalAuth({ clientId: uuid }),
-            puppeteer: { headless: true }
-        });
-
-        appSessions[uuid].client.on('qr', async (qr: any) => {
-            appSessions[uuid].image = await qrcode.toDataURL(qr);
-        });
-
-        appSessions[uuid].client.on('message_create', async (message: any) => {
-            const user = message.from.split('@')[0];
-            if (appSessions[uuid].lastsenttimestamp[user] === undefined) appSessions[uuid].lastsenttimestamp[user] = 0;
-            if ((Date.now() - appSessions[uuid].lastsenttimestamp[user]) < options.cooldownTime) return;
-            try {
-                const messageResponse = await processMessage(options, user, message);
-                if (!messageResponse) throw new Error('Respuesta fallida');
-                appSessions[uuid].client.sendMessage(message.from, messageResponse);
-            } catch (error: any) {
-                appSessions[uuid].client.sendMessage(message.from, error.message);
-            }
-            appSessions[uuid].lastsenttimestamp[user] = Date.now();
-        });
-
-        appSessions[uuid].client.initialize();
+        if (!createClient(uuid)) throw new Error('Error al crear el cliente.');
         res.json({ error: false, message: '¡UUID listo para usar!', uuid: uuid });
     } catch (error: any) {
-        appSessions[uuid] = undefined;
         res.status(500).json({ error: true, message: error.message });
     }
 });
@@ -253,8 +266,9 @@ app.post('/' + apiEndpoint + 'status', (req: any, res: any) => {
 app.post('/' + apiEndpoint + 'delete', (req: any, res: any) => {
     const uuid = req.body.uuid;
     try {
+        if ((appMasterKey != '') && (!req.body.masterkey || (req.body.masterkey != appMasterKey))) throw new Error('Clave no informada.');
         if (appSessions[uuid] === undefined) throw new Error('Ocurrió un error al obtener el uuid. Por favor intenta nuevamente.');
-        appSessions[uuid] = undefined;
+        if (!deleteClient(uuid)) throw new Error('Error al borrar el cliente.');
         res.json({ error: false, message: '¡QR borrado con exito!', uuid: uuid });
     } catch (error: any) {
         res.status(500).json({ error: true, message: error.message });
@@ -262,5 +276,9 @@ app.post('/' + apiEndpoint + 'delete', (req: any, res: any) => {
 });
 
 app.listen(appPort, () => {
-    console.log(`App escuchando en el puerto ${appPort}`);
+    console.log('App escuchando en el puerto ' + appPort);
+    const savedClients = loadYaml(clientsFile) || [];
+    savedClients.forEach((e: any) => {
+        if (!createClient(e, false)) console.log('Error al crear el cliente guardado: ' + e);
+    });
 });

@@ -430,6 +430,7 @@ const processMessage = async (options: any, user: string, message: any) => {
                         const aiArray = aiCommand.split(' ');
                         responseText = await commandMessage(message, aiCommand, userDir, yamlFile, yamlData, aiArray);
                         saveHistory(user, options.historyFile, 'Respuesta devuelta por Arca: \n' + responseText, 'Respuesta confirmada.');
+                        if (!saveYaml(yamlFile, { ...yamlData, ...{ messagecount: (yamlData.messagecount ? yamlData.messagecount : 0) + 1, lastmessage: Date.now() } })) throw new Error('Error al guardar los datos.');
                     } else {
                         responseText = aiResponse.message;
                     }
