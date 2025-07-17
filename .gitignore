@@ -132,9 +132,10 @@ dist
 .wwebjs_auth
 .wwebjs_cache
 build
-webservice
+data/webservice
 *.xml
 *.crt
 *.key
 *.wsdl
 *.yml
+!docker-compose.yml

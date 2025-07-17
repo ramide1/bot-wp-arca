@@ -1,0 +1,33 @@
+services:
+  bot_wp_arca:
+    build: .
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+    container_name: bot_wp_arca
+    ports:
+      - "${APPPORT}:3000/tcp"
+    volumes:
+      - ./data:/usr/src/app/data
+    environment:
+      WEBSERVICEDIR: "${WEBSERVICEDIR}"
+      TESTMODE: "${TESTMODE}"
+      COOLDOWNTIME: "${COOLDOWNTIME}"
+      MAXATTEMPTS: "${MAXATTEMPTS}"
+      USEAI: "${USEAI}"
+      GOOGLEAPI: "${GOOGLEAPI}"
+      URL: "${URL}"
+      MODEL: "${MODEL}"
+      APIKEY: "${APIKEY}"
+      HISTORYFILE: "${HISTORYFILE}"
+      MAXTOKENS: "${MAXTOKENS}"
+      COMMANDPREFIX: "${COMMANDPREFIX}"
+      MAXMESSAGES: "${MAXMESSAGES}"
+      APPPORT: "3000"
+      MASTERKEY: "${MASTERKEY}"
+      APIENDPOINT: "${APIENDPOINT}"
+      CLIENTSFILE: "${CLIENTSFILE}"
+      ONLYUSERMESSAGES: "${ONLYUSERMESSAGES}"
+      USEDEFAULTWEBSERVICE: "${USEDEFAULTWEBSERVICE}"
+      DEFAULTWEBSERVICEDIR: "${DEFAULTWEBSERVICEDIR}"
+      DEFAULTWEBSERVICECUIT: "${DEFAULTWEBSERVICECUIT}"
