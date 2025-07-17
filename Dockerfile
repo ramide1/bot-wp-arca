@@ -1,5 +1,4 @@
-FROM node:24-alpine
-RUN apk add --no-cache git
+FROM node:24
 WORKDIR /usr/src/app
 COPY . .
 RUN npm install
