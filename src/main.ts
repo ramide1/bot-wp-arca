@@ -70,7 +70,7 @@ const createClient = (uuid: string, save: boolean = true) => {
         };
         appSessions[uuid].client = new Client({
             authStrategy: new LocalAuth({ clientId: uuid }),
-            puppeteer: { headless: true }
+            puppeteer: { headless: true, args: ['--no-sandbox'] }
         });
 
         appSessions[uuid].client.on('qr', async (qr: any) => {
