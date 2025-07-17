@@ -118,7 +118,7 @@ const deleteClient = (uuid: string) => {
 const app: any = express();
 app.use(express.json());
 
-app.get('/', (_req: any, res: any) => {
+app.get('/' + apiEndpoint, (_req: any, res: any) => {
     res.send(`<!DOCTYPE html>
 <html lang="es">
 <head>
