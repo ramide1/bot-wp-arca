@@ -17,6 +17,9 @@ const options: any = {
     historyFile: (process.env.HISTORYFILE !== undefined) ? process.env.HISTORYFILE : 'history.yml',
     maxTokens: parseInt((process.env.MAXTOKENS !== undefined) ? process.env.MAXTOKENS : '800'),
     commandPrefix: commandPrefix,
+    useDefaultWebservice: ((process.env.USEDEFAULTWEBSERVICE !== undefined) && (process.env.USEDEFAULTWEBSERVICE === 'true')) ? true : false,
+    defaultWebserviceDir: (process.env.DEFAULTWEBSERVICEDIR !== undefined) ? process.env.DEFAULTWEBSERVICEDIR : 'webservice/default/',
+    defaultWebserviceCuit: (process.env.DEFAULTWEBSERVICECUIT !== undefined) ? process.env.DEFAULTWEBSERVICECUIT : '',
     instructions: `La fecha actual es ${(new Date()).toISOString()} . 
 Eres un asistente en formato bot de WhatsApp especializado en trámites que interactúa con los servicios web de ARCA (Agencia de Recaudación y Control Aduanero) anteriormente conocido como AFIP de Argentina para realizar consultas y operaciones fiscales. 
 Características principales:

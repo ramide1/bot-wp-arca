@@ -35,28 +35,4 @@ const saveBase64 = (base64File: string, base64Data: string) => {
     }
 }
 
-const saveHistory = (username: string, historyFile: string, message: string, response: string) => {
-    let history: any = {};
-    if (existsSync(historyFile)) {
-        const fileContent = readFileSync(historyFile, 'utf8');
-        history = parse(fileContent) || {};
-    }
-
-    history[username] = history[username] || [];
-    history[username].push({ message, response });
-
-    const newYamlContent = stringify(history);
-    writeFileSync(historyFile, newYamlContent, 'utf8');
-    return;
-};
-
-const loadHistory = (username: string, historyFile: string) => {
-    if (existsSync(historyFile)) {
-        const fileContent = readFileSync(historyFile, 'utf8');
-        const history = parse(fileContent) || {};
-        return history[username] || [];
-    }
-    return [];
-};
-
-export { saveYaml, loadYaml, saveBase64, saveHistory, loadHistory };
+export { saveYaml, loadYaml, saveBase64 };

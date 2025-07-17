@@ -1,5 +1,7 @@
 import { FEParamGetPtosVenta, FEParamGetTiposCbte, FEParamGetTiposConcepto, FEParamGetTiposDoc, FEParamGetTiposIva, FEParamGetTiposMonedas, FEParamGetCotizacion, FECompUltimoAutorizado, FECompConsultar, FECAESolicitar } from "./arca";
-import { saveYaml, loadYaml, saveBase64, loadHistory, saveHistory } from './file';
+import { saveYaml, loadYaml, saveBase64 } from './file';
+import { saveHistory } from "./history";
+import { callAi } from "./ai";
 
 const configuracion = async (messageArray: any[], yamlFile: string, yamlData: any, userDir: string, message: any) => {
     try {
@@ -32,12 +34,9 @@ const configuracion = async (messageArray: any[], yamlFile: string, yamlData: an
     }
 };
 
-const puntosVenta = async (yamlData: any, userDir: string) => {
+const puntosVenta = async (cuit: string, userDir: string) => {
     try {
-        if (!yamlData.cuit) throw new Error('No se encontró cuit valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.crt) throw new Error('No se encontró crt valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.key) throw new Error('No se encontró key valido. Porfavor revisar el comando "configuracion".');
-        const ptosVenta = await FEParamGetPtosVenta(yamlData.cuit, userDir);
+        const ptosVenta = await FEParamGetPtosVenta(cuit, userDir);
         const ptosVentaResponse = ptosVenta.FEParamGetPtosVentaResult;
         if (ptosVentaResponse.ResultGet) {
             let responseText = 'Puntos de Venta:\n';
@@ -57,12 +56,9 @@ const puntosVenta = async (yamlData: any, userDir: string) => {
     }
 };
 
-const tiposComprobante = async (yamlData: any, userDir: string) => {
+const tiposComprobante = async (cuit: string, userDir: string) => {
     try {
-        if (!yamlData.cuit) throw new Error('No se encontró cuit valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.crt) throw new Error('No se encontró crt valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.key) throw new Error('No se encontró key valido. Porfavor revisar el comando "configuracion".');
-        const tiposComprobante = await FEParamGetTiposCbte(yamlData.cuit, userDir);
+        const tiposComprobante = await FEParamGetTiposCbte(cuit, userDir);
         const tiposComprobanteResponse = tiposComprobante.FEParamGetTiposCbteResult;
         if (tiposComprobanteResponse.ResultGet) {
             let responseText = 'Tipos de Comprobante:\n';
@@ -82,12 +78,9 @@ const tiposComprobante = async (yamlData: any, userDir: string) => {
     }
 };
 
-const tiposConcepto = async (yamlData: any, userDir: string) => {
+const tiposConcepto = async (cuit: string, userDir: string) => {
     try {
-        if (!yamlData.cuit) throw new Error('No se encontró cuit valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.crt) throw new Error('No se encontró crt valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.key) throw new Error('No se encontró key valido. Porfavor revisar el comando "configuracion".');
-        const tiposConcepto = await FEParamGetTiposConcepto(yamlData.cuit, userDir);
+        const tiposConcepto = await FEParamGetTiposConcepto(cuit, userDir);
         const tiposConceptoResponse = tiposConcepto.FEParamGetTiposConceptoResult;
         if (tiposConceptoResponse.ResultGet) {
             let responseText = 'Tipos de Concepto:\n';
@@ -107,12 +100,9 @@ const tiposConcepto = async (yamlData: any, userDir: string) => {
     }
 };
 
-const tiposDocumento = async (yamlData: any, userDir: string) => {
+const tiposDocumento = async (cuit: string, userDir: string) => {
     try {
-        if (!yamlData.cuit) throw new Error('No se encontró cuit valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.crt) throw new Error('No se encontró crt valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.key) throw new Error('No se encontró key valido. Porfavor revisar el comando "configuracion".');
-        const tiposDocumento = await FEParamGetTiposDoc(yamlData.cuit, userDir);
+        const tiposDocumento = await FEParamGetTiposDoc(cuit, userDir);
         const tiposDocumentoResponse = tiposDocumento.FEParamGetTiposDocResult;
         if (tiposDocumentoResponse.ResultGet) {
             let responseText = 'Tipos de Documento:\n';
@@ -132,12 +122,9 @@ const tiposDocumento = async (yamlData: any, userDir: string) => {
     }
 };
 
-const tiposIva = async (yamlData: any, userDir: string) => {
+const tiposIva = async (cuit: string, userDir: string) => {
     try {
-        if (!yamlData.cuit) throw new Error('No se encontró cuit valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.crt) throw new Error('No se encontró crt valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.key) throw new Error('No se encontró key valido. Porfavor revisar el comando "configuracion".');
-        const tiposIva = await FEParamGetTiposIva(yamlData.cuit, userDir);
+        const tiposIva = await FEParamGetTiposIva(cuit, userDir);
         const tiposIvaResponse = tiposIva.FEParamGetTiposIvaResult;
         if (tiposIvaResponse.ResultGet) {
             let responseText = 'Tipos de IVA:\n';
@@ -157,12 +144,9 @@ const tiposIva = async (yamlData: any, userDir: string) => {
     }
 };
 
-const tiposMoneda = async (yamlData: any, userDir: string) => {
+const tiposMoneda = async (cuit: string, userDir: string) => {
     try {
-        if (!yamlData.cuit) throw new Error('No se encontró cuit valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.crt) throw new Error('No se encontró crt valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.key) throw new Error('No se encontró key valido. Porfavor revisar el comando "configuracion".');
-        const tiposMoneda = await FEParamGetTiposMonedas(yamlData.cuit, userDir);
+        const tiposMoneda = await FEParamGetTiposMonedas(cuit, userDir);
         const tiposMonedaResponse = tiposMoneda.FEParamGetTiposMonedasResult;
         if (tiposMonedaResponse.ResultGet) {
             let responseText = 'Tipos de Moneda:\n';
@@ -182,16 +166,13 @@ const tiposMoneda = async (yamlData: any, userDir: string) => {
     }
 };
 
-const cotizacion = async (messageArray: any[], yamlData: any, userDir: string) => {
+const cotizacion = async (messageArray: any[], cuit: string, userDir: string) => {
     try {
-        if (!yamlData.cuit) throw new Error('No se encontró cuit valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.crt) throw new Error('No se encontró crt valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.key) throw new Error('No se encontró key valido. Porfavor revisar el comando "configuracion".');
         let cotizacionId = 'DOL';
         let cotizacionFecha = '';
         if (messageArray.length > 1) cotizacionId = messageArray[1].toUpperCase();
         if (messageArray.length > 2) cotizacionFecha = messageArray[2];
-        const tiposCotizacion = await FEParamGetCotizacion(yamlData.cuit, userDir, cotizacionId, cotizacionFecha);
+        const tiposCotizacion = await FEParamGetCotizacion(cuit, userDir, cotizacionId, cotizacionFecha);
         const tiposCotizacionResponse = tiposCotizacion.FEParamGetCotizacionResult;
         if (tiposCotizacionResponse.ResultGet) {
             return 'Cotización:\nID: ' + tiposCotizacionResponse.ResultGet.MonId + '\nCotiz: ' + tiposCotizacionResponse.ResultGet.MonCotiz + '\nFecha: ' + tiposCotizacionResponse.ResultGet.FchCotiz;
@@ -207,12 +188,9 @@ const cotizacion = async (messageArray: any[], yamlData: any, userDir: string) =
     }
 };
 
-const ultimoComprobante = async (yamlData: any, userDir: string) => {
+const ultimoComprobante = async (cuit: string, userDir: string) => {
     try {
-        if (!yamlData.cuit) throw new Error('No se encontró cuit valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.crt) throw new Error('No se encontró crt valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.key) throw new Error('No se encontró key valido. Porfavor revisar el comando "configuracion".');
-        const ultimoComprobante = await FECompUltimoAutorizado(yamlData.cuit, userDir);
+        const ultimoComprobante = await FECompUltimoAutorizado(cuit, userDir);
         const ultimoComprobanteResponse = ultimoComprobante.FECompUltimoAutorizadoResult;
         if (!ultimoComprobanteResponse.Errors) {
             return JSON.stringify(ultimoComprobanteResponse);
@@ -228,12 +206,9 @@ const ultimoComprobante = async (yamlData: any, userDir: string) => {
     }
 };
 
-const consultarComprobante = async (yamlData: any, userDir: string) => {
+const consultarComprobante = async (cuit: string, userDir: string) => {
     try {
-        if (!yamlData.cuit) throw new Error('No se encontró cuit valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.crt) throw new Error('No se encontró crt valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.key) throw new Error('No se encontró key valido. Porfavor revisar el comando "configuracion".');
-        const consultarComprobante = await FECompConsultar(yamlData.cuit, userDir);
+        const consultarComprobante = await FECompConsultar(cuit, userDir);
         const consultarComprobanteResponse = consultarComprobante.FECompConsultarResult;
         if (!consultarComprobanteResponse.Errors) {
             return JSON.stringify(consultarComprobanteResponse);
@@ -249,17 +224,14 @@ const consultarComprobante = async (yamlData: any, userDir: string) => {
     }
 };
 
-const facturar = async (messageArray: any[], yamlData: any, userDir: string) => {
+const facturar = async (messageArray: any[], cuit: string, userDir: string) => {
     try {
-        if (!yamlData.cuit) throw new Error('No se encontró cuit valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.crt) throw new Error('No se encontró crt valido. Porfavor revisar el comando "configuracion".');
-        if (!yamlData.key) throw new Error('No se encontró key valido. Porfavor revisar el comando "configuracion".');
         if (messageArray.length < 8) throw new Error('Por favor enviá todos los parametros solicitados.');
         const dateCurrent = new Date();
         const currentYear = dateCurrent.getFullYear().toString();
         const currentMonth = (dateCurrent.getMonth() + 1).toString().padStart(2, '0');
         const currentDay = (dateCurrent.getDate()).toString().padStart(2, '0');
-        const facturar = await FECAESolicitar(yamlData.cuit, userDir, {
+        const facturar = await FECAESolicitar(cuit, userDir, {
             'FeCabReq': {
                 'CantReg': 1,
                 'PtoVta': messageArray[1],
@@ -301,30 +273,79 @@ const facturar = async (messageArray: any[], yamlData: any, userDir: string) => 
     }
 };
 
-const commandMessage = async (message: any, messageText: string, userDir: string, yamlFile: string, yamlData: any, messageArray: any[]) => {
+const checkCerts = (yamlData: any) => {
+    try {
+        if (!yamlData.cuit) throw new Error('No se encontró cuit valido. Porfavor revisar el comando "configuracion".');
+        if (!yamlData.crt) throw new Error('No se encontró crt valido. Porfavor revisar el comando "configuracion".');
+        if (!yamlData.key) throw new Error('No se encontró key valido. Porfavor revisar el comando "configuracion".');
+        return { error: false, message: 'certificados validos.' };
+    } catch (error: any) {
+        return { error: true, message: error.message };
+    }
+};
+
+const commandMessage = async (message: any, messageText: string, userDir: string, yamlFile: string, yamlData: any, messageArray: any[], useDefaultWebservice: boolean = false, defaultWebserviceDir: string = '', defaultWebserviceCuit: string = '') => {
     try {
         if (messageText.includes('configuracion')) {
             return await configuracion(messageArray, yamlFile, yamlData, userDir, message)
         } else if (messageText.includes('puntos venta')) {
-            return await puntosVenta(yamlData, userDir);
+            const certsValid = checkCerts(yamlData);
+            if (certsValid.error) throw new Error(certsValid.message);
+            return await puntosVenta(yamlData.cuit, userDir);
         } else if (messageText.includes('tipos comprobante')) {
-            return await tiposComprobante(yamlData, userDir);
+            const certsValid = checkCerts(yamlData);
+            if (certsValid.error) {
+                if (useDefaultWebservice && (defaultWebserviceDir != '') && (defaultWebserviceCuit != '')) return await tiposComprobante(defaultWebserviceCuit, defaultWebserviceDir);
+                throw new Error(certsValid.message);
+            }
+            return await tiposComprobante(yamlData.cuit, userDir);
         } else if (messageText.includes('tipos concepto')) {
-            return await tiposConcepto(yamlData, userDir);
+            const certsValid = checkCerts(yamlData);
+            if (certsValid.error) {
+                if (useDefaultWebservice && (defaultWebserviceDir != '') && (defaultWebserviceCuit != '')) return await tiposConcepto(defaultWebserviceCuit, defaultWebserviceDir);
+                throw new Error(certsValid.message);
+            }
+            return await tiposConcepto(yamlData.cuit, userDir);
         } else if (messageText.includes('tipos documento')) {
-            return await tiposDocumento(yamlData, userDir);
+            const certsValid = checkCerts(yamlData);
+            if (certsValid.error) {
+                if (useDefaultWebservice && (defaultWebserviceDir != '') && (defaultWebserviceCuit != '')) return await tiposDocumento(defaultWebserviceCuit, defaultWebserviceDir);
+                throw new Error(certsValid.message);
+            }
+            return await tiposDocumento(yamlData.cuit, userDir);
         } else if (messageText.includes('tipos iva')) {
-            return await tiposIva(yamlData, userDir);
+            const certsValid = checkCerts(yamlData);
+            if (certsValid.error) {
+                if (useDefaultWebservice && (defaultWebserviceDir != '') && (defaultWebserviceCuit != '')) return await tiposIva(defaultWebserviceCuit, defaultWebserviceDir);
+                throw new Error(certsValid.message);
+            }
+            return await tiposIva(yamlData.cuit, userDir);
         } else if (messageText.includes('tipos moneda')) {
-            return await tiposMoneda(yamlData, userDir);
+            const certsValid = checkCerts(yamlData);
+            if (certsValid.error) {
+                if (useDefaultWebservice && (defaultWebserviceDir != '') && (defaultWebserviceCuit != '')) return await tiposMoneda(defaultWebserviceCuit, defaultWebserviceDir);
+                throw new Error(certsValid.message);
+            }
+            return await tiposMoneda(yamlData.cuit, userDir);
         } else if (messageText.includes('cotizacion')) {
-            return await cotizacion(messageArray, yamlData, userDir);
+            const certsValid = checkCerts(yamlData);
+            if (certsValid.error) {
+                if (useDefaultWebservice && (defaultWebserviceDir != '') && (defaultWebserviceCuit != '')) return await cotizacion(messageArray, defaultWebserviceCuit, defaultWebserviceDir);
+                throw new Error(certsValid.message);
+            }
+            return await cotizacion(messageArray, yamlData.cuit, userDir);
         } else if (messageText.includes('ultimo comprobante')) {
-            return await ultimoComprobante(yamlData, userDir);
+            const certsValid = checkCerts(yamlData);
+            if (certsValid.error) throw new Error(certsValid.message);
+            return await ultimoComprobante(yamlData.cuit, userDir);
         } else if (messageText.includes('consultar comprobante')) {
-            return await consultarComprobante(yamlData, userDir);
+            const certsValid = checkCerts(yamlData);
+            if (certsValid.error) throw new Error(certsValid.message);
+            return await consultarComprobante(yamlData.cuit, userDir);
         } else if (messageText.includes('facturar')) {
-            return await facturar(messageArray, yamlData, userDir);
+            const certsValid = checkCerts(yamlData);
+            if (certsValid.error) throw new Error(certsValid.message);
+            return await facturar(messageArray, yamlData.cuit, userDir);
         } else if (messageText.includes('ayuda')) {
             return 'Comandos disponibles:\n' +
                 '- configuracion [cuit|crt|key]: Configura los certificados\n' +
@@ -347,70 +368,6 @@ const commandMessage = async (message: any, messageText: string, userDir: string
     }
 };
 
-const callAi = async (options: any, message: string, username: string) => {
-    const userHistory = loadHistory(username, options.historyFile);
-    const messages = [
-        { role: options.googleApi ? 'user' : 'system', content: options.instructions }
-    ];
-    userHistory.forEach((entry: any) => {
-        messages.push({ role: 'user', content: entry.message });
-        messages.push({ role: options.googleApi ? 'model' : 'assistant', content: entry.response });
-    });
-    messages.push({ role: 'user', content: message });
-    let responseText = '';
-    if (options.googleApi) {
-        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + options.model + ':generateContent?key=' + options.apiKey, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                contents: messages.map(msg => (
-                    {
-                        role: msg.role,
-                        parts: [
-                            {
-                                text: msg.content
-                            }
-                        ]
-                    }
-                )),
-                generationConfig: {
-                    maxOutputTokens: options.maxTokens
-                }
-            })
-        });
-        if (!response.ok) {
-            return { error: true, message: 'Respuesta fallida del API' };
-        }
-        const data = await response.json();
-        responseText = data.candidates[0].content.parts[0].text || '';
-    } else {
-        const response = await fetch(options.url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + options.apiKey
-            },
-            body: JSON.stringify({
-                model: options.model,
-                messages,
-                max_tokens: options.maxTokens
-            })
-        });
-        if (!response.ok) {
-            return { error: true, message: 'Respuesta fallida del API' };
-        }
-        const data = await response.json();
-        responseText = data.choices[0].message.content || '';
-    }
-    if (responseText !== '') {
-        saveHistory(username, options.historyFile, message, responseText);
-        return { error: false, message: responseText };
-    }
-    return { error: true, message: 'Respuesta fallida del API' };
-};
-
 const processMessage = async (options: any, user: string, message: any) => {
     try {
         let responseText = 'Error al obtener respuesta. Intentá nuevamente más tarde.';
@@ -419,7 +376,7 @@ const processMessage = async (options: any, user: string, message: any) => {
         const yamlFile = userDir + 'userdata.yml';
         const yamlData = loadYaml(yamlFile) || {};
         const messageArray = messageText.split(' ');
-        responseText = await commandMessage(message, messageText, userDir, yamlFile, yamlData, messageArray);
+        responseText = await commandMessage(message, messageText, userDir, yamlFile, yamlData, messageArray, options.useDefaultWebservice, options.defaultWebserviceDir, options.defaultWebserviceCuit);
         if (options.useAi) {
             if (!responseText) {
                 const aiResponse = await callAi(options, messageText, user);
@@ -428,7 +385,7 @@ const processMessage = async (options: any, user: string, message: any) => {
                         const aiResponseArray = aiResponse.message.split(options.commandPrefix);
                         const aiCommand = aiResponseArray[aiResponseArray.length - 1].trim().toLowerCase();
                         const aiArray = aiCommand.split(' ');
-                        responseText = await commandMessage(message, aiCommand, userDir, yamlFile, yamlData, aiArray);
+                        responseText = await commandMessage(message, aiCommand, userDir, yamlFile, yamlData, aiArray, options.useDefaultWebservice, options.defaultWebserviceDir, options.defaultWebserviceCuit);
                         saveHistory(user, options.historyFile, 'Respuesta devuelta por Arca: \n' + responseText, 'Respuesta confirmada.');
                         if (!saveYaml(yamlFile, { ...yamlData, ...{ messagecount: (yamlData.messagecount ? yamlData.messagecount : 0) + 1, lastmessage: Date.now() } })) throw new Error('Error al guardar los datos.');
                     } else {
