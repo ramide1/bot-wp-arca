@@ -1,9 +1,9 @@
 import { FEParamGetPtosVenta, FEParamGetTiposCbte, FEParamGetTiposConcepto, FEParamGetTiposDoc, FEParamGetTiposIva, FEParamGetTiposMonedas, FEParamGetCotizacion, FECompUltimoAutorizado, FECompConsultar, FECAESolicitar } from "./arca";
 import { saveYaml, loadYaml, saveBase64 } from './file';
 import { saveHistory } from "./history";
-import { callAi } from "./ai";
+import { callAi, callGoogleAudio } from "./ai";
 
-const configuracion = async (messageArray: any[], yamlFile: string, yamlData: any, userDir: string, message: any) => {
+const configuracion = async (messageArray: any[], yamlFile: string, yamlData: any, userDir: string, media: string = '') => {
     try {
         if (messageArray.length < 2) throw new Error('Por favor enviá el parametro a configurar.');
         const parametro = messageArray[1];
@@ -13,17 +13,15 @@ const configuracion = async (messageArray: any[], yamlFile: string, yamlData: an
             if (!saveYaml(yamlFile, { ...yamlData, ...{ cuit } })) throw new Error('Error al guardar los datos.');
             return 'CUIT ' + cuit + ' configurado correctamente.';
         } else if (parametro == 'crt') {
-            if (!message.hasMedia) throw new Error('No se detecto archivo CRT adjunto en el mensaje.');
-            const media = await message.downloadMedia();
+            if (media === '') throw new Error('No se detecto archivo CRT adjunto en el mensaje.');
             const base64File = userDir + 'ghf.crt';
-            if (!saveBase64(base64File, media.data)) throw new Error('Error al guardar CRT.');
+            if (!saveBase64(base64File, media)) throw new Error('Error al guardar CRT.');
             if (!saveYaml(yamlFile, { ...yamlData, ...{ crt: true } })) throw new Error('Error al guardar los datos.');
             return 'CRT configurado correctamente.';
         } else if (parametro == 'key') {
-            if (!message.hasMedia) throw new Error('No se detecto archivo KEY adjunto en el mensaje.');
-            const media = await message.downloadMedia();
+            if (media === '') throw new Error('No se detecto archivo KEY adjunto en el mensaje.');
             const base64File = userDir + 'ghf.key';
-            if (!saveBase64(base64File, media.data)) throw new Error('Error al guardar KEY.');
+            if (!saveBase64(base64File, media)) throw new Error('Error al guardar KEY.');
             if (!saveYaml(yamlFile, { ...yamlData, ...{ key: true } })) throw new Error('Error al guardar los datos.');
             return 'KEY configurado correctamente.';
         } else {
@@ -284,10 +282,10 @@ const checkCerts = (yamlData: any) => {
     }
 };
 
-const commandMessage = async (message: any, messageText: string, userDir: string, yamlFile: string, yamlData: any, messageArray: any[], useDefaultWebservice: boolean = false, defaultWebserviceDir: string = '', defaultWebserviceCuit: string = '') => {
+const commandMessage = async (messageText: string, userDir: string, yamlFile: string, yamlData: any, messageArray: any[], useDefaultWebservice: boolean = false, defaultWebserviceDir: string = '', defaultWebserviceCuit: string = '', media: string = '') => {
     try {
         if (messageText.includes('configuracion')) {
-            return await configuracion(messageArray, yamlFile, yamlData, userDir, message)
+            return await configuracion(messageArray, yamlFile, yamlData, userDir, media)
         } else if (messageText.includes('puntos venta')) {
             const certsValid = checkCerts(yamlData);
             if (certsValid.error) throw new Error(certsValid.message);
@@ -371,12 +369,17 @@ const commandMessage = async (message: any, messageText: string, userDir: string
 const processMessage = async (options: any, user: string, message: any) => {
     try {
         let responseText = 'Error al obtener respuesta. Intentá nuevamente más tarde.';
-        const messageText = message.body.trim().toLowerCase();
+        let messageText = message.body.trim().toLowerCase();
         const userDir = options.webserviceDir + user + '/';
         const yamlFile = userDir + 'userdata.yml';
         const yamlData = loadYaml(yamlFile) || {};
+        const media = message.hasMedia ? await message.downloadMedia() : false;
+        if ((messageText === '') && options.googleAudio && media && media.mimetype.startsWith('audio/')) {
+            const googleAudioResponse = await callGoogleAudio(options, media);
+            if (googleAudioResponse && !googleAudioResponse.error) messageText = googleAudioResponse.message;
+        }
         const messageArray = messageText.split(' ');
-        responseText = await commandMessage(message, messageText, userDir, yamlFile, yamlData, messageArray, options.useDefaultWebservice, options.defaultWebserviceDir, options.defaultWebserviceCuit);
+        responseText = await commandMessage(messageText, userDir, yamlFile, yamlData, messageArray, options.useDefaultWebservice, options.defaultWebserviceDir, options.defaultWebserviceCuit, media ? media.data : '');
         if (options.useAi) {
             if (!responseText) {
                 const aiResponse = await callAi(options, messageText, user);
@@ -385,7 +388,7 @@ const processMessage = async (options: any, user: string, message: any) => {
                         const aiResponseArray = aiResponse.message.split(options.commandPrefix);
                         const aiCommand = aiResponseArray[aiResponseArray.length - 1].trim().toLowerCase();
                         const aiArray = aiCommand.split(' ');
-                        responseText = await commandMessage(message, aiCommand, userDir, yamlFile, yamlData, aiArray, options.useDefaultWebservice, options.defaultWebserviceDir, options.defaultWebserviceCuit);
+                        responseText = await commandMessage(aiCommand, userDir, yamlFile, yamlData, aiArray, options.useDefaultWebservice, options.defaultWebserviceDir, options.defaultWebserviceCuit, media ? media.data : '');
                         saveHistory(user, options.historyFile, 'Respuesta devuelta por Arca: \n' + responseText, 'Respuesta confirmada.');
                         if (!saveYaml(yamlFile, { ...yamlData, ...{ messagecount: (yamlData.messagecount ? yamlData.messagecount : 0) + 1, lastmessage: Date.now() } })) throw new Error('Error al guardar los datos.');
                     } else {

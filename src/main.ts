@@ -11,6 +11,7 @@ const options: any = {
     cooldownTime: parseInt((process.env.COOLDOWNTIME !== undefined) ? process.env.COOLDOWNTIME : '2000'),
     useAi: ((process.env.USEAI !== undefined) && (process.env.USEAI === 'true')) ? true : false,
     googleApi: ((process.env.GOOGLEAPI !== undefined) && (process.env.GOOGLEAPI === 'true')) ? true : false,
+    googleAudio: ((process.env.GOOGLEAUDIO !== undefined) && (process.env.GOOGLEAUDIO === 'true')) ? true : false,
     url: (process.env.URL !== undefined) ? process.env.URL : 'https://api.openai.com/v1/chat/completions',
     model: (process.env.MODEL !== undefined) ? process.env.MODEL : 'gpt-4o-mini',
     apiKey: (process.env.APIKEY !== undefined) ? process.env.APIKEY : '',
@@ -53,11 +54,12 @@ Flujo de validación:
 - Si falta algún dato → Solicitar siguiente dato se pide al usuario que ingrese el siguiente dato requerido
 - Volver a validar → Se repite el paso de validación hasta que todos los datos estén completos
 Manejo de errores:
-- Si el comando requiere parámetros faltantes solicitarlos uno a uno`
+- Si el comando requiere parámetros faltantes solicitarlos uno a uno`,
+    audioInstructions: 'Generar una transcripción del discurso.'
 };
 const appPort: number = parseInt((process.env.APPPORT !== undefined) ? process.env.APPPORT : '3000');
 const appMasterKey: string = (process.env.MASTERKEY !== undefined) ? process.env.MASTERKEY : '';
-const apiEndpoint: string = (process.env.APIENDPOINT !== undefined) ? process.env.APIENDPOINT : 'api/';
+const appEndpoint: string = (process.env.APPENDPOINT !== undefined) ? process.env.APPENDPOINT : '';
 const clientsFile: string = (process.env.CLIENTSFILE !== undefined) ? process.env.CLIENTSFILE : 'clients.yml';
 const onlyUserMessages = ((process.env.ONLYUSERMESSAGES !== undefined) && (process.env.ONLYUSERMESSAGES === 'true')) ? true : false;
 const appSessions: any = {};
@@ -118,7 +120,7 @@ const deleteClient = (uuid: string) => {
 const app: any = express();
 app.use(express.json());
 
-app.get('/' + apiEndpoint, (_req: any, res: any) => {
+app.get('/' + appEndpoint, (_req: any, res: any) => {
     res.send(`<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -201,7 +203,7 @@ app.get('/' + apiEndpoint, (_req: any, res: any) => {
         let uuid = false;
         const checkStatus = async () => {
             if (uuid) {
-                const response = await fetch('/' + '${apiEndpoint}' + 'status', {
+                const response = await fetch('/' + '${appEndpoint}' + 'status', {
                     method: 'POST',
                     headers: { 'Content-type': 'application/json;charset=UTF-8' },
                     body: JSON.stringify({
@@ -222,7 +224,7 @@ app.get('/' + apiEndpoint, (_req: any, res: any) => {
             }
         };
         const createClient = async () => {
-            const response = await fetch('/' + '${apiEndpoint}' + 'create', {
+            const response = await fetch('/' + '${appEndpoint}' + 'create', {
                 method: 'POST',
                 headers: { 'Content-type': 'application/json;charset=UTF-8' },
             });
@@ -245,7 +247,7 @@ app.get('/' + apiEndpoint, (_req: any, res: any) => {
 </html>`);
 });
 
-app.post('/' + apiEndpoint + 'create', (_req: any, res: any) => {
+app.post('/' + appEndpoint + 'create', (_req: any, res: any) => {
     const uuid = Date.now().toString(36) + Math.random().toString(36).substr(2);
     try {
         if (!createClient(uuid)) throw new Error('Error al crear el cliente.');
@@ -255,7 +257,7 @@ app.post('/' + apiEndpoint + 'create', (_req: any, res: any) => {
     }
 });
 
-app.post('/' + apiEndpoint + 'status', (req: any, res: any) => {
+app.post('/' + appEndpoint + 'status', (req: any, res: any) => {
     const uuid = req.body.uuid;
     try {
         if (appSessions[uuid] === undefined) throw new Error('Ocurrió un error al obtener el uuid. Por favor intenta nuevamente.');
@@ -266,7 +268,7 @@ app.post('/' + apiEndpoint + 'status', (req: any, res: any) => {
     }
 });
 
-app.post('/' + apiEndpoint + 'delete', (req: any, res: any) => {
+app.post('/' + appEndpoint + 'delete', (req: any, res: any) => {
     const uuid = req.body.uuid;
     try {
         if ((appMasterKey != '') && (!req.body.masterkey || (req.body.masterkey != appMasterKey))) throw new Error('Clave no informada.');
