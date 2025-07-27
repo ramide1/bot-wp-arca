@@ -1,5 +1,5 @@
 import { FEParamGetPtosVenta, FEParamGetTiposCbte, FEParamGetTiposConcepto, FEParamGetTiposDoc, FEParamGetTiposIva, FEParamGetTiposMonedas, FEParamGetCotizacion, FECompUltimoAutorizado, FECompConsultar, FECAESolicitar } from "./arca";
-import { saveYaml, loadYaml, saveBase64 } from './file';
+import { saveYaml, loadYaml, saveBase64, convertAudio } from './file';
 import { saveHistory } from "./history";
 import { callAi, callAudio } from "./ai";
 
@@ -374,8 +374,10 @@ const processMessage = async (options: any, user: string, message: any) => {
         const yamlFile = userDir + 'userdata.yml';
         const yamlData = loadYaml(yamlFile) || {};
         const media = message.hasMedia ? await message.downloadMedia() : false;
-        if ((messageText === '') && options.audio && media && media.mimetype.startsWith('audio/')) {
-            const audioResponse = await callAudio(options, media);
+        if ((messageText === '') && options.audio && media && media.mimetype.startsWith('audio/ogg')) {
+            const audioData = convertAudio(userDir + 'tmp.ogg', media.data, 'wav');
+            if (!audioData) throw new Error('Error al obtener audio.');
+            const audioResponse = await callAudio(options, audioData, 'wav');
             if (audioResponse && !audioResponse.error) messageText = audioResponse.message;
         }
         const messageArray = messageText.split(' ');

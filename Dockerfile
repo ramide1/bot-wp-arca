@@ -1,5 +1,5 @@
 FROM node:24-alpine
-RUN apk add --no-cache chromium openssl
+RUN apk add --no-cache chromium openssl ffmpeg
 WORKDIR /usr/src/app
 COPY . .
 RUN npm install

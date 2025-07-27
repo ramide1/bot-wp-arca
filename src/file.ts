@@ -1,6 +1,7 @@
 import { parse, stringify } from 'yaml';
-import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync, mkdirSync, unlinkSync } from 'fs';
 import { dirname } from 'path';
+import { execSync } from 'child_process';
 
 const saveYaml = (yamlFile: string, jsonData: any) => {
     try {
@@ -35,4 +36,18 @@ const saveBase64 = (base64File: string, base64Data: string) => {
     }
 }
 
-export { saveYaml, loadYaml, saveBase64 };
+const convertAudio = (audioFile: string, base64Data: string, audioformat: string) => {
+    try {
+        if (!saveBase64(audioFile, base64Data)) throw new Error('Error al guardar audio.');
+        const output = dirname(audioFile) + '/tmp.' + audioformat;
+        execSync('ffmpeg -i ' + audioFile + ' ' + output);
+        const convertedAudio = readFileSync(output, 'base64');
+        unlinkSync(audioFile);
+        unlinkSync(output);
+        return convertedAudio;
+    } catch (error: any) {
+        return false;
+    }
+}
+
+export { saveYaml, loadYaml, saveBase64, convertAudio };

@@ -33,25 +33,8 @@ const callAi = async (options: any, message: string, username: string) => {
     }
 };
 
-const callAudio = async (options: any, media: any) => {
+const callAudio = async (options: any, base64Data: string, audioFormat: string) => {
     try {
-        const audioExtension: {[key: string]: string} = {
-            'audio/mpeg': 'mp3',
-            'audio/ogg': 'ogg',
-            'audio/wav': 'wav',
-            'audio/webm': 'weba',
-            'audio/aac': 'aac',
-            'audio/midi': 'mid',
-            'audio/x-wav': 'wav',
-            'audio/x-aiff': 'aiff',
-            'audio/x-m4a': 'm4a',
-            'audio/x-ms-wma': 'wma',
-            'audio/x-flac': 'flac',
-            'audio/opus': 'opus',
-            'audio/amr': 'amr',
-            'audio/3gpp': '3gp',
-            'audio/3gpp2': '3g2'
-        };
         const response = await fetch(options.url, {
             method: 'POST',
             headers: {
@@ -69,8 +52,8 @@ const callAudio = async (options: any, media: any) => {
                             {
                                 type: 'input_audio',
                                 input_audio: {
-                                    data: media.data,
-                                    format: audioExtension[media.mimetype.toLowerCase()] || ''
+                                    data: base64Data,
+                                    format: audioFormat
                                 }
                             }
                         ]
