@@ -1,7 +1,7 @@
 import { FEParamGetPtosVenta, FEParamGetTiposCbte, FEParamGetTiposConcepto, FEParamGetTiposDoc, FEParamGetTiposIva, FEParamGetTiposMonedas, FEParamGetCotizacion, FECompUltimoAutorizado, FECompConsultar, FECAESolicitar } from "./arca";
 import { saveYaml, loadYaml, saveBase64 } from './file';
 import { saveHistory } from "./history";
-import { callAi, callGoogleAudio } from "./ai";
+import { callAi, callAudio } from "./ai";
 
 const configuracion = async (messageArray: any[], yamlFile: string, yamlData: any, userDir: string, media: string = '') => {
     try {
@@ -374,9 +374,9 @@ const processMessage = async (options: any, user: string, message: any) => {
         const yamlFile = userDir + 'userdata.yml';
         const yamlData = loadYaml(yamlFile) || {};
         const media = message.hasMedia ? await message.downloadMedia() : false;
-        if ((messageText === '') && options.googleAudio && media && media.mimetype.startsWith('audio/')) {
-            const googleAudioResponse = await callGoogleAudio(options, media);
-            if (googleAudioResponse && !googleAudioResponse.error) messageText = googleAudioResponse.message;
+        if ((messageText === '') && options.audio && media && media.mimetype.startsWith('audio/')) {
+            const audioResponse = await callAudio(options, media);
+            if (audioResponse && !audioResponse.error) messageText = audioResponse.message;
         }
         const messageArray = messageText.split(' ');
         responseText = await commandMessage(messageText, userDir, yamlFile, yamlData, messageArray, options.useDefaultWebservice, options.defaultWebserviceDir, options.defaultWebserviceCuit, media ? media.data : '');

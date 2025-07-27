@@ -3,55 +3,28 @@ import { loadHistory, saveHistory } from './history';
 const callAi = async (options: any, message: string, username: string) => {
     try {
         const userHistory = loadHistory(username, options.historyFile);
-        const messages = [{ role: options.googleApi ? 'user' : 'system', content: options.instructions }];
+        const messages = [{ role: 'system', content: options.instructions }];
         userHistory.forEach((entry: any) => {
             messages.push({ role: 'user', content: entry.message });
-            messages.push({ role: options.googleApi ? 'model' : 'assistant', content: entry.response });
+            messages.push({ role: 'assistant', content: entry.response });
         });
         messages.push({ role: 'user', content: message });
-        let responseText = '';
-        if (options.googleApi) {
-            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + options.model + ':generateContent?key=' + options.apiKey, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    contents: messages.map(msg => (
-                        {
-                            role: msg.role,
-                            parts: [
-                                {
-                                    text: msg.content
-                                }
-                            ]
-                        }
-                    )),
-                    generationConfig: {
-                        maxOutputTokens: options.maxTokens
-                    }
-                })
-            });
-            if (!response.ok) throw new Error('Respuesta fallida del API');
-            const data = await response.json();
-            responseText = data.candidates[0].content.parts[0].text || '';
-        } else {
-            const response = await fetch(options.url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + options.apiKey
-                },
-                body: JSON.stringify({
-                    model: options.model,
-                    messages,
-                    max_tokens: options.maxTokens
-                })
-            });
-            if (!response.ok) throw new Error('Respuesta fallida del API');
-            const data = await response.json();
-            responseText = data.choices[0].message.content || '';
-        }
+        const response = await fetch(options.url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + options.apiKey
+            },
+            body: JSON.stringify({
+                model: options.model,
+                reasoning_effort: options.reasoningEffort,
+                messages,
+                max_tokens: options.maxTokens
+            })
+        });
+        if (!response.ok) throw new Error('Respuesta fallida del API');
+        const data = await response.json();
+        const responseText = data.choices[0].message.content || '';
         if (responseText === '') throw new Error('Respuesta no esperada del API');
         saveHistory(username, options.historyFile, message, responseText);
         return { error: false, message: responseText };
@@ -60,36 +33,55 @@ const callAi = async (options: any, message: string, username: string) => {
     }
 };
 
-const callGoogleAudio = async (options: any, media: any) => {
+const callAudio = async (options: any, media: any) => {
     try {
-        let responseText = '';
-        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + options.model + ':generateContent?key=' + options.apiKey, {
+        const audioExtension: {[key: string]: string} = {
+            'audio/mpeg': 'mp3',
+            'audio/ogg': 'ogg',
+            'audio/wav': 'wav',
+            'audio/webm': 'weba',
+            'audio/aac': 'aac',
+            'audio/midi': 'mid',
+            'audio/x-wav': 'wav',
+            'audio/x-aiff': 'aiff',
+            'audio/x-m4a': 'm4a',
+            'audio/x-ms-wma': 'wma',
+            'audio/x-flac': 'flac',
+            'audio/opus': 'opus',
+            'audio/amr': 'amr',
+            'audio/3gpp': '3gp',
+            'audio/3gpp2': '3g2'
+        };
+        const response = await fetch(options.url, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + options.apiKey
             },
             body: JSON.stringify({
-                contents: [
+                model: options.model,
+                reasoning_effort: options.reasoningEffort,
+                messages: [
                     {
-                        parts: [
-                            { text: options.audioInstructions },
+                        role: 'user',
+                        content: [
+                            { type: 'text', text: options.audioInstructions },
                             {
-                                inlineData: {
-                                    mimeType: media.mimetype,
-                                    data: media.data
+                                type: 'input_audio',
+                                input_audio: {
+                                    data: media.data,
+                                    format: audioExtension[media.mimetype.toLowerCase()] || ''
                                 }
                             }
                         ]
                     }
                 ],
-                generationConfig: {
-                    maxOutputTokens: options.maxTokens
-                }
+                max_tokens: options.maxTokens
             })
         });
         if (!response.ok) throw new Error('Respuesta fallida del API');
         const data = await response.json();
-        responseText = data.candidates[0].content.parts[0].text || '';
+        const responseText = data.choices[0].message.content || '';
         if (responseText === '') throw new Error('Respuesta no esperada del API');
         return { error: false, message: responseText };
     } catch (error: any) {
@@ -97,4 +89,4 @@ const callGoogleAudio = async (options: any, media: any) => {
     }
 };
 
-export { callAi, callGoogleAudio };
+export { callAi, callAudio };
