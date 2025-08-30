@@ -55,7 +55,8 @@ Flujo de validación:
 - Volver a validar → Se repite el paso de validación hasta que todos los datos estén completos
 Manejo de errores:
 - Si el comando requiere parámetros faltantes solicitarlos uno a uno`,
-    audioInstructions: 'Generar una transcripción del discurso.'
+    audioInstructions: 'Generar una transcripción del discurso.',
+    browserPath: (process.env.BROWSERPATH !== undefined) ? process.env.BROWSERPATH : '',
 };
 const appPort: number = parseInt((process.env.APPPORT !== undefined) ? process.env.APPPORT : '3000');
 const appMasterKey: string = (process.env.MASTERKEY !== undefined) ? process.env.MASTERKEY : '';
@@ -70,9 +71,11 @@ const createClient = (uuid: string, save: boolean = true) => {
             image: false,
             lastsenttimestamp: []
         };
+        const puppeteerOptions: any = { headless: true, args: ['--no-sandbox'] };
+        if (options.browserPath !== '') puppeteerOptions.executablePath = options.browserPath;
         appSessions[uuid].client = new Client({
             authStrategy: new LocalAuth({ clientId: uuid }),
-            puppeteer: { headless: true, args: ['--no-sandbox'] }
+            puppeteer: puppeteerOptions
         });
 
         appSessions[uuid].client.on('qr', async (qr: any) => {
