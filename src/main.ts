@@ -8,7 +8,6 @@ import 'dotenv/config';
 const commandPrefix: string = (process.env.COMMANDPREFIX !== undefined) ? process.env.COMMANDPREFIX : '!command';
 const options: any = {
     webserviceDir: (process.env.WEBSERVICEDIR !== undefined) ? process.env.WEBSERVICEDIR : 'webservice/',
-    cooldownTime: parseInt((process.env.COOLDOWNTIME !== undefined) ? process.env.COOLDOWNTIME : '2000'),
     useAi: ((process.env.USEAI !== undefined) && (process.env.USEAI === 'true')) ? true : false,
     reasoningEffort: (process.env.REASONINGEFFORT !== undefined) ? process.env.REASONINGEFFORT : 'none',
     audio: ((process.env.AUDIO !== undefined) && (process.env.AUDIO === 'true')) ? true : false,
@@ -55,14 +54,15 @@ Flujo de validación:
 - Volver a validar → Se repite el paso de validación hasta que todos los datos estén completos
 Manejo de errores:
 - Si el comando requiere parámetros faltantes solicitarlos uno a uno`,
-    audioInstructions: 'Generar una transcripción del discurso.',
-    browserPath: (process.env.BROWSERPATH !== undefined) ? process.env.BROWSERPATH : '',
+    audioInstructions: 'Generar una transcripción del discurso.'
 };
 const appPort: number = parseInt((process.env.APPPORT !== undefined) ? process.env.APPPORT : '3000');
 const appMasterKey: string = (process.env.MASTERKEY !== undefined) ? process.env.MASTERKEY : '';
 const appEndpoint: string = (process.env.APPENDPOINT !== undefined) ? process.env.APPENDPOINT : '';
 const clientsFile: string = (process.env.CLIENTSFILE !== undefined) ? process.env.CLIENTSFILE : 'clients.yml';
 const onlyUserMessages = ((process.env.ONLYUSERMESSAGES !== undefined) && (process.env.ONLYUSERMESSAGES === 'true')) ? true : false;
+const browserPath: string = (process.env.BROWSERPATH !== undefined) ? process.env.BROWSERPATH : '';
+const cooldownTime: number = parseInt((process.env.COOLDOWNTIME !== undefined) ? process.env.COOLDOWNTIME : '5000');
 const appSessions: any = {};
 const createClient = (uuid: string, save: boolean = true) => {
     try {
@@ -72,9 +72,9 @@ const createClient = (uuid: string, save: boolean = true) => {
             lastsenttimestamp: []
         };
         const puppeteerOptions: any = { headless: true, args: ['--no-sandbox'] };
-        if (options.browserPath !== '') puppeteerOptions.executablePath = options.browserPath;
+        if (browserPath !== '') puppeteerOptions.executablePath = browserPath;
         appSessions[uuid].client = new Client({
-            authStrategy: new LocalAuth({ clientId: uuid }),
+            authStrategy: new LocalAuth({ clientId: uuid, dataPath: options.webserviceDir + 'auth' }),
             puppeteer: puppeteerOptions
         });
 
@@ -86,7 +86,7 @@ const createClient = (uuid: string, save: boolean = true) => {
             if (onlyUserMessages && (!message.fromMe || (message.to != message.from))) return;
             const user = message.from.split('@')[0];
             if (appSessions[uuid].lastsenttimestamp[user] === undefined) appSessions[uuid].lastsenttimestamp[user] = 0;
-            if ((Date.now() - appSessions[uuid].lastsenttimestamp[user]) < options.cooldownTime) return;
+            if ((Date.now() - appSessions[uuid].lastsenttimestamp[user]) < cooldownTime) return;
             try {
                 const messageResponse = await processMessage(options, user, message);
                 if (!messageResponse) throw new Error('Respuesta fallida');

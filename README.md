@@ -12,7 +12,7 @@ Un bot de WhatsApp que interactúa con los servicios web de ARCA (Agencia de Rec
 
 ## Requisitos previos
 
-- Node.js (versión 16 o superior)
+- Node.js
 - npm
 - Cuenta de WhatsApp vinculada a un número telefónico
 - Certificados digitales de AFIP (.crt y .key)
@@ -35,7 +35,7 @@ npm install
 ```
 TESTMODE=true  # o false para entorno de producción
 WEBSERVICEDIR=webservice/  # directorio para almacenar archivos
-COOLDOWNTIME=2000  # tiempo de espera entre mensajes en ms
+COOLDOWNTIME=5000  # tiempo de espera entre mensajes en ms
 ```
 
 ## Configuración inicial
