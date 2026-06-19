@@ -249,7 +249,11 @@ const server: any = Bun.serve({
         createClient();
     </script>
 </body>
-</html>`);
+</html>`, {
+                headers: {
+                    'Content-Type': 'text/html; charset=utf-8'
+                }
+            });
         }
 
         if (req.method === "POST" && path === ('/' + appEndpoint + 'create')) {
