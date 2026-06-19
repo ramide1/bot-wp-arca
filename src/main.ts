@@ -1,9 +1,7 @@
 import { Client, LocalAuth } from 'whatsapp-web.js';
 import { processMessage } from './message';
 import { saveYaml, loadYaml } from './file';
-import express from 'express';
 import qrcode from 'qrcode';
-import 'dotenv/config';
 
 const commandPrefix: string = (process.env.COMMANDPREFIX !== undefined) ? process.env.COMMANDPREFIX : '!command';
 const options: any = {
@@ -64,6 +62,7 @@ const onlyUserMessages = ((process.env.ONLYUSERMESSAGES !== undefined) && (proce
 const browserPath: string = (process.env.BROWSERPATH !== undefined) ? process.env.BROWSERPATH : '';
 const cooldownTime: number = parseInt((process.env.COOLDOWNTIME !== undefined) ? process.env.COOLDOWNTIME : '5000');
 const appSessions: any = {};
+
 const createClient = (uuid: string, save: boolean = true) => {
     try {
         appSessions[uuid] = {
@@ -109,6 +108,7 @@ const createClient = (uuid: string, save: boolean = true) => {
         return false;
     }
 };
+
 const deleteClient = (uuid: string) => {
     try {
         const savedClients = loadYaml(clientsFile) || [];
@@ -120,11 +120,13 @@ const deleteClient = (uuid: string) => {
         return false;
     }
 };
-const app: any = express();
-app.use(express.json());
 
-app.get('/' + appEndpoint, (_req: any, res: any) => {
-    res.send(`<!DOCTYPE html>
+const server: any = Bun.serve({
+    async fetch(req) {
+        const path = new URL(req.url).pathname;
+
+        if (req.method === "GET" && path === ('/' + appEndpoint)) {
+            return new Response(`<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -248,45 +250,49 @@ app.get('/' + appEndpoint, (_req: any, res: any) => {
     </script>
 </body>
 </html>`);
-});
+        }
 
-app.post('/' + appEndpoint + 'create', (_req: any, res: any) => {
-    const uuid = Date.now().toString(36) + Math.random().toString(36).substr(2);
-    try {
-        if (!createClient(uuid)) throw new Error('Error al crear el cliente.');
-        res.json({ error: false, message: '¡UUID listo para usar!', uuid: uuid });
-    } catch (error: any) {
-        res.status(500).json({ error: true, message: error.message });
+        if (req.method === "POST" && path === ('/' + appEndpoint + 'create')) {
+            const uuid: string = Bun.randomUUIDv7();
+            try {
+                if (!createClient(uuid)) throw new Error('Error al crear el cliente.');
+                return Response.json({ error: false, message: '¡UUID listo para usar!', uuid: uuid });
+            } catch (error: any) {
+                return Response.json({ error: true, message: error.message }, { status: 500 });
+            }
+        }
+
+        if (req.method === "POST" && path === ('/' + appEndpoint + 'status')) {
+            const data: any = await req.json();
+            const uuid: string = data.uuid;
+            try {
+                if (appSessions[uuid] === undefined) throw new Error('Ocurrió un error al obtener el uuid. Por favor intenta nuevamente.');
+                if (!appSessions[uuid].image) throw new Error('Generando el QR. Por favor espere.');
+                return Response.json({ error: false, message: '¡QR listo para usar!', image: appSessions[uuid].image });
+            } catch (error: any) {
+                return Response.json({ error: true, message: error.message }, { status: 500 });
+            }
+        }
+
+        if (req.method === "POST" && path === ('/' + appEndpoint + 'delete')) {
+            const data: any = await req.json();
+            const uuid: string = data.uuid;
+            try {
+                if ((appMasterKey != '') && (!data.masterkey || (data.masterkey != appMasterKey))) throw new Error('Clave no informada.');
+                if (appSessions[uuid] === undefined) throw new Error('Ocurrió un error al obtener el uuid. Por favor intenta nuevamente.');
+                if (!deleteClient(uuid)) throw new Error('Error al borrar el cliente.');
+                return Response.json({ error: false, message: '¡QR borrado con exito!', uuid: uuid });
+            } catch (error: any) {
+                return Response.json({ error: true, message: error.message }, { status: 500 });
+            }
+        }
+
+        return new Response("Pagina no encontrada", { status: 404 });
     }
 });
 
-app.post('/' + appEndpoint + 'status', (req: any, res: any) => {
-    const uuid = req.body.uuid;
-    try {
-        if (appSessions[uuid] === undefined) throw new Error('Ocurrió un error al obtener el uuid. Por favor intenta nuevamente.');
-        if (!appSessions[uuid].image) throw new Error('Generando el QR. Por favor espere.');
-        res.json({ error: false, message: '¡QR listo para usar!', image: appSessions[uuid].image });
-    } catch (error: any) {
-        res.status(500).json({ error: true, message: error.message });
-    }
-});
-
-app.post('/' + appEndpoint + 'delete', (req: any, res: any) => {
-    const uuid = req.body.uuid;
-    try {
-        if ((appMasterKey != '') && (!req.body.masterkey || (req.body.masterkey != appMasterKey))) throw new Error('Clave no informada.');
-        if (appSessions[uuid] === undefined) throw new Error('Ocurrió un error al obtener el uuid. Por favor intenta nuevamente.');
-        if (!deleteClient(uuid)) throw new Error('Error al borrar el cliente.');
-        res.json({ error: false, message: '¡QR borrado con exito!', uuid: uuid });
-    } catch (error: any) {
-        res.status(500).json({ error: true, message: error.message });
-    }
-});
-
-app.listen(appPort, () => {
-    console.log('App escuchando en el puerto ' + appPort);
-    const savedClients = loadYaml(clientsFile) || [];
-    savedClients.forEach((e: any) => {
-        if (!createClient(e, false)) console.log('Error al crear el cliente guardado: ' + e);
-    });
+console.log(`Escuchando en ${server.url}`);
+const savedClients = loadYaml(clientsFile) || [];
+savedClients.forEach((e: any) => {
+    if (!createClient(e, false)) console.log('Error al crear el cliente guardado: ' + e);
 });

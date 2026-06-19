@@ -23,7 +23,7 @@ const callAi = async (options: any, message: string, username: string) => {
             })
         });
         if (!response.ok) throw new Error('Respuesta fallida del API');
-        const data = await response.json();
+        const data: any = await response.json();
         const responseText = data.choices[0].message.content || '';
         if (responseText === '') throw new Error('Respuesta no esperada del API');
         saveHistory(username, options.historyFile, message, responseText);
@@ -63,7 +63,7 @@ const callAudio = async (options: any, base64Data: string, audioFormat: string) 
             })
         });
         if (!response.ok) throw new Error('Respuesta fallida del API');
-        const data = await response.json();
+        const data: any = await response.json();
         const responseText = data.choices[0].message.content || '';
         if (responseText === '') throw new Error('Respuesta no esperada del API');
         return { error: false, message: responseText };

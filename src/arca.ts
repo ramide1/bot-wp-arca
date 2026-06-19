@@ -2,7 +2,6 @@ import { readFileSync, writeFileSync, unlinkSync, existsSync, statSync } from 'f
 import { createClientAsync } from 'soap';
 import { create, convert } from 'xmlbuilder2';
 import { execSync } from 'child_process';
-import 'dotenv/config';
 
 const webservice = {
     'wsaa': {
