@@ -12,8 +12,7 @@ Un bot de WhatsApp que interactúa con los servicios web de ARCA (Agencia de Rec
 
 ## Requisitos previos
 
-- Node.js
-- npm
+- Bun js
 - Cuenta de WhatsApp vinculada a un número telefónico
 - Certificados digitales de AFIP (.crt y .key)
 - CUIT válido habilitado para facturación electrónica
@@ -28,7 +27,7 @@ cd whatsapp-afip-bot
 
 2. Instala las dependencias:
 ```bash
-npm install
+bun install
 ```
 
 3. Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
@@ -42,7 +41,7 @@ COOLDOWNTIME=5000  # tiempo de espera entre mensajes en ms
 
 1. Inicia el bot:
 ```bash
-npm start
+bun src/main.ts
 ```
 
 2. Escanea el código QR que aparece en la terminal con WhatsApp en tu teléfono.
