@@ -367,7 +367,7 @@ const commandMessage = async (messageText: string, userDir: string, yamlFile: st
     }
 };
 
-const processMessage = async (options: any, user: string, messageText: string, media: MessageMedia) => {
+const processMessage = async (options: any, user: string, messageText: string, media: MessageMedia | null) => {
     try {
         let responseText = 'Error al obtener respuesta. Intentá nuevamente más tarde.';
         const userDir = options.webserviceDir + user + '/';

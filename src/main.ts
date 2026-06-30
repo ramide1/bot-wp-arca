@@ -1,7 +1,19 @@
-import { Client, LocalAuth, type Message } from 'whatsapp-web.js';
+import { Client, LocalAuth, type Message, MessageMedia } from 'whatsapp-web.js';
 import { processMessage } from './message';
 import { saveYaml, loadYaml } from './file';
 import qrcode from 'qrcode';
+
+interface PuppeterConfig {
+    args?: string[];
+    headless?: boolean;
+    chrome?: {
+        skipDownload?: boolean;
+    };
+    firefox?: {
+        skipDownload?: boolean;
+    };
+    executablePath?: string;
+}
 
 const commandPrefix: string = (process.env.COMMANDPREFIX !== undefined) ? process.env.COMMANDPREFIX : '!command';
 const toIsoString = (date: Date) => {
@@ -77,30 +89,43 @@ const clientsFile: string = process.env.CLIENTSFILE ?? 'data/clients.yml';
 const onlyUserMessages = ((process.env.ONLYUSERMESSAGES !== undefined) && (process.env.ONLYUSERMESSAGES === 'true')) ? true : false;
 const browserPath: string = process.env.BROWSERPATH ?? '';
 const cooldownTime: number = parseInt(process.env.COOLDOWNTIME ?? '5000');
+
+const puppeteer: PuppeterConfig = {
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    headless: true
+};
+
+if (browserPath !== '') {
+    puppeteer.chrome = {
+        skipDownload: true
+    };
+    puppeteer.firefox = {
+        skipDownload: true
+    };
+    puppeteer.executablePath = browserPath;
+}
+
 const appSessions: any = {};
 const userSessions: Map<string, boolean> = new Map<string, boolean>();
 
 const createClient = (uuid: string, save: boolean = true) => {
     try {
         appSessions[uuid] = {
-            client: null,
+            client: new Client({
+                puppeteer,
+                authStrategy: new LocalAuth({ clientId: uuid, dataPath: options.webserviceDir + 'auth' })
+            }),
             image: false,
             lastsenttimestamp: []
         };
-        const puppeteerOptions: any = { headless: true, args: ['--no-sandbox'] };
-        if (browserPath !== '') puppeteerOptions.executablePath = browserPath;
-        appSessions[uuid].client = new Client({
-            authStrategy: new LocalAuth({ clientId: uuid, dataPath: options.webserviceDir + 'auth' }),
-            puppeteer: puppeteerOptions
-        });
 
-        appSessions[uuid].client.on('qr', async (qr: any) => {
+        appSessions[uuid].client.on('qr', async (qr: string) => {
             appSessions[uuid].image = await qrcode.toDataURL(qr);
         });
 
         appSessions[uuid].client.on('message_create', async (message: Message) => {
             const messageText: string = message.body.trim().toLowerCase();
-            let media: any = null;
+            let media: MessageMedia | null = null;
             if (message.hasMedia) media = await message.downloadMedia();
             if ((onlyUserMessages && !message.fromMe) || message.isStatus || (message.to == message.from) || (!media && messageText === '')) return;
             const contact: any = await appSessions[uuid].client.getContactLidAndPhone([message.from]);
@@ -111,11 +136,20 @@ const createClient = (uuid: string, save: boolean = true) => {
             try {
                 if (sesionActual) throw new Error('Respondiendo mensaje anterior. Porfavor espere antes de enviar un nuevo mensaje');
                 userSessions.set(user, true);
-                const messageResponse = await processMessage(options, user, messageText, media);
+                let messageResponse: string = await processMessage(options, user, messageText, media);
                 if (!messageResponse) throw new Error('Respuesta fallida');
-                appSessions[uuid].client.sendMessage(message.from, messageResponse);
+                const mediaUrls: any = messageResponse.match(/(https?:\/\/[^\s]+)/g);
+                if (mediaUrls && mediaUrls.length !== 0) {
+                    messageResponse = messageResponse.replaceAll(/(https?:\/\/[^\s]+)/g, '');
+                    await appSessions[uuid].client.sendMessage(message.from, messageResponse);
+                    for (const mediaUrl of mediaUrls) {
+                        await appSessions[uuid].client.sendMessage(message.from, (await MessageMedia.fromUrl(mediaUrl, { unsafeMime: true })));
+                    }
+                } else {
+                    await appSessions[uuid].client.sendMessage(message.from, messageResponse);
+                }
             } catch (error: any) {
-                appSessions[uuid].client.sendMessage(message.from, error.message);
+                await appSessions[uuid].client.sendMessage(message.from, error.message);
             }
             appSessions[uuid].lastsenttimestamp[user] = Date.now();
             if (!sesionActual) userSessions.delete(user);
