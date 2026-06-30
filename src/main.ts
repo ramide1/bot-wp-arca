@@ -4,21 +4,37 @@ import { saveYaml, loadYaml } from './file';
 import qrcode from 'qrcode';
 
 const commandPrefix: string = (process.env.COMMANDPREFIX !== undefined) ? process.env.COMMANDPREFIX : '!command';
+const toIsoString = (date: Date) => {
+    const tzo: number = -date.getTimezoneOffset(),
+        dif: string = tzo >= 0 ? '+' : '-',
+        pad: any = function (num: number) {
+            return (num < 10 ? '0' : '') + num;
+        };
+
+    return date.getFullYear() +
+        '-' + pad(date.getMonth() + 1) +
+        '-' + pad(date.getDate()) +
+        'T' + pad(date.getHours()) +
+        ':' + pad(date.getMinutes()) +
+        ':' + pad(date.getSeconds()) +
+        dif + pad(Math.floor(Math.abs(tzo) / 60)) +
+        ':' + pad(Math.abs(tzo) % 60);
+}
 const options: any = {
-    webserviceDir: (process.env.WEBSERVICEDIR !== undefined) ? process.env.WEBSERVICEDIR : 'data/webservice/',
+    webserviceDir: process.env.WEBSERVICEDIR ?? 'data/webservice/',
     useAi: ((process.env.USEAI !== undefined) && (process.env.USEAI === 'true')) ? true : false,
-    reasoningEffort: (process.env.REASONINGEFFORT !== undefined) ? process.env.REASONINGEFFORT : 'none',
+    reasoningEffort: process.env.REASONINGEFFORT ?? 'none',
     audio: ((process.env.AUDIO !== undefined) && (process.env.AUDIO === 'true')) ? true : false,
-    url: (process.env.URL !== undefined) ? process.env.URL : 'https://api.openai.com/v1/chat/completions',
-    model: (process.env.MODEL !== undefined) ? process.env.MODEL : 'gpt-4o-mini',
-    apiKey: (process.env.APIKEY !== undefined) ? process.env.APIKEY : '',
-    historyFile: (process.env.HISTORYFILE !== undefined) ? process.env.HISTORYFILE : 'data/history.yml',
-    maxTokens: parseInt((process.env.MAXTOKENS !== undefined) ? process.env.MAXTOKENS : '800'),
+    url: process.env.URL ?? 'https://api.openai.com/v1/chat/completions',
+    model: process.env.MODEL ?? 'gpt-4o-mini',
+    apiKey: process.env.APIKEY ?? '',
+    historyFile: process.env.HISTORYFILE ?? 'data/history.yml',
+    maxTokens: parseInt(process.env.MAXTOKENS ?? '2000'),
     commandPrefix: commandPrefix,
     useDefaultWebservice: ((process.env.USEDEFAULTWEBSERVICE !== undefined) && (process.env.USEDEFAULTWEBSERVICE === 'true')) ? true : false,
-    defaultWebserviceDir: (process.env.DEFAULTWEBSERVICEDIR !== undefined) ? process.env.DEFAULTWEBSERVICEDIR : 'data/webservice/default/',
-    defaultWebserviceCuit: (process.env.DEFAULTWEBSERVICECUIT !== undefined) ? process.env.DEFAULTWEBSERVICECUIT : '',
-    instructions: `La fecha actual es ${(new Date()).toISOString()} . 
+    defaultWebserviceDir: process.env.DEFAULTWEBSERVICEDIR ?? 'data/webservice/default/',
+    defaultWebserviceCuit: process.env.DEFAULTWEBSERVICECUIT ?? '',
+    instructions: `La fecha actual en formato ISO String es ${toIsoString((new Date()))} . 
 Eres un asistente en formato bot de WhatsApp especializado en trámites que interactúa con los servicios web de ARCA (Agencia de Recaudación y Control Aduanero) anteriormente conocido como AFIP de Argentina para realizar consultas y operaciones fiscales. 
 Características principales:
 - Consulta de puntos de venta habilitados
@@ -54,13 +70,13 @@ Manejo de errores:
 - Si el comando requiere parámetros faltantes solicitarlos uno a uno`,
     audioInstructions: 'Generar una transcripción del discurso.'
 };
-const appPort: number = parseInt((process.env.APPPORT !== undefined) ? process.env.APPPORT : '3000');
+const appPort: number = parseInt(process.env.APPPORT ?? '3000');
 const appMasterKeys: string[] = ((process.env.MASTERKEYS !== undefined) && (process.env.MASTERKEYS.includes(', '))) ? process.env.MASTERKEYS.trim().split(', ') : ((process.env.MASTERKEYS !== undefined) ? [process.env.MASTERKEYS.trim()] : []);
-const appEndpoint: string = (process.env.APPENDPOINT !== undefined) ? process.env.APPENDPOINT : '';
-const clientsFile: string = (process.env.CLIENTSFILE !== undefined) ? process.env.CLIENTSFILE : 'data/clients.yml';
+const appEndpoint: string = process.env.APPENDPOINT ?? '';
+const clientsFile: string = process.env.CLIENTSFILE ?? 'data/clients.yml';
 const onlyUserMessages = ((process.env.ONLYUSERMESSAGES !== undefined) && (process.env.ONLYUSERMESSAGES === 'true')) ? true : false;
-const browserPath: string = (process.env.BROWSERPATH !== undefined) ? process.env.BROWSERPATH : '';
-const cooldownTime: number = parseInt((process.env.COOLDOWNTIME !== undefined) ? process.env.COOLDOWNTIME : '5000');
+const browserPath: string = process.env.BROWSERPATH ?? '';
+const cooldownTime: number = parseInt(process.env.COOLDOWNTIME ?? '5000');
 const appSessions: any = {};
 const userSessions: Map<string, boolean> = new Map<string, boolean>();
 
