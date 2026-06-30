@@ -2,6 +2,7 @@ import { FEParamGetPtosVenta, FEParamGetTiposCbte, FEParamGetTiposConcepto, FEPa
 import { saveYaml, loadYaml, saveBase64, convertAudio } from './file';
 import { saveHistory } from "./history";
 import { callAi, callAudio } from "./ai";
+import { type MessageMedia } from "whatsapp-web.js";
 
 const configuracion = async (messageArray: any[], yamlFile: string, yamlData: any, userDir: string, media: string = '') => {
     try {
@@ -366,14 +367,12 @@ const commandMessage = async (messageText: string, userDir: string, yamlFile: st
     }
 };
 
-const processMessage = async (options: any, user: string, message: any) => {
+const processMessage = async (options: any, user: string, messageText: string, media: MessageMedia) => {
     try {
         let responseText = 'Error al obtener respuesta. Intentá nuevamente más tarde.';
-        let messageText = message.body.trim().toLowerCase();
         const userDir = options.webserviceDir + user + '/';
         const yamlFile = userDir + 'userdata.yml';
         const yamlData = loadYaml(yamlFile) || {};
-        const media = message.hasMedia ? await message.downloadMedia() : false;
         if ((messageText === '') && options.audio && media && media.mimetype.startsWith('audio/ogg')) {
             const audioData = convertAudio(userDir + 'tmp.ogg', media.data, 'wav');
             if (!audioData) throw new Error('Error al obtener audio.');
@@ -401,7 +400,7 @@ const processMessage = async (options: any, user: string, message: any) => {
                 saveHistory(user, options.historyFile, messageText, responseText);
             }
         } else {
-            if (!responseText) throw new Error('Comando no reconocido. Envía "ayuda" para ver opciones.');
+            if (!responseText) throw new Error('Comando no reconocido. Envía "' + options.commandPrefix + ' ayuda" para ver opciones.');
         }
         return responseText;
     } catch (error: any) {

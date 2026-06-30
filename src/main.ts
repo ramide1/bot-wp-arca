@@ -1,4 +1,4 @@
-import { Client, LocalAuth } from 'whatsapp-web.js';
+import { Client, LocalAuth, type Message } from 'whatsapp-web.js';
 import { processMessage } from './message';
 import { saveYaml, loadYaml } from './file';
 import qrcode from 'qrcode';
@@ -62,6 +62,7 @@ const onlyUserMessages = ((process.env.ONLYUSERMESSAGES !== undefined) && (proce
 const browserPath: string = (process.env.BROWSERPATH !== undefined) ? process.env.BROWSERPATH : '';
 const cooldownTime: number = parseInt((process.env.COOLDOWNTIME !== undefined) ? process.env.COOLDOWNTIME : '5000');
 const appSessions: any = {};
+const userSessions: Map<string, boolean> = new Map<string, boolean>();
 
 const createClient = (uuid: string, save: boolean = true) => {
     try {
@@ -81,20 +82,27 @@ const createClient = (uuid: string, save: boolean = true) => {
             appSessions[uuid].image = await qrcode.toDataURL(qr);
         });
 
-        appSessions[uuid].client.on('message_create', async (message: any) => {
-            if (onlyUserMessages && (!message.fromMe || (message.to != message.from))) return;
+        appSessions[uuid].client.on('message_create', async (message: Message) => {
+            const messageText: string = message.body.trim().toLowerCase();
+            let media: any = null;
+            if (message.hasMedia) media = await message.downloadMedia();
+            if ((onlyUserMessages && !message.fromMe) || message.isStatus || (message.to == message.from) || (!media && messageText === '')) return;
             const contact: any = await appSessions[uuid].client.getContactLidAndPhone([message.from]);
             const user: string = contact?.[0]?.pn ?? message.from.split('@')[0];
             if (appSessions[uuid].lastsenttimestamp[user] === undefined) appSessions[uuid].lastsenttimestamp[user] = 0;
             if ((Date.now() - appSessions[uuid].lastsenttimestamp[user]) < cooldownTime) return;
+            const sesionActual: number | boolean = userSessions.get(user) ?? false;
             try {
-                const messageResponse = await processMessage(options, user, message);
+                if (sesionActual) throw new Error('Respondiendo mensaje anterior. Porfavor espere antes de enviar un nuevo mensaje');
+                userSessions.set(user, true);
+                const messageResponse = await processMessage(options, user, messageText, media);
                 if (!messageResponse) throw new Error('Respuesta fallida');
                 appSessions[uuid].client.sendMessage(message.from, messageResponse);
             } catch (error: any) {
                 appSessions[uuid].client.sendMessage(message.from, error.message);
             }
             appSessions[uuid].lastsenttimestamp[user] = Date.now();
+            if (!sesionActual) userSessions.delete(user);
         });
 
         appSessions[uuid].client.initialize();
