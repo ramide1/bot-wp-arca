@@ -1,7 +1,7 @@
 import { FEParamGetPtosVenta, FEParamGetTiposCbte, FEParamGetTiposConcepto, FEParamGetTiposDoc, FEParamGetTiposIva, FEParamGetTiposMonedas, FEParamGetCotizacion, FECompUltimoAutorizado, FECompConsultar, FECAESolicitar } from "./arca";
 import { saveYaml, loadYaml, saveBase64, convertAudio } from './file';
 import { saveHistory } from "./history";
-import { callAi, callAudio } from "./ai";
+import { callAi } from "./ai";
 import { type MessageMedia } from "whatsapp-web.js";
 
 const configuracion = async (messageArray: any[], yamlFile: string, yamlData: any, userDir: string, media: string = '') => {
@@ -369,17 +369,11 @@ const commandMessage = async (messageText: string, userDir: string, yamlFile: st
 
 const processMessage = async (options: any, user: string, messageText: string, media: MessageMedia | null) => {
     try {
-        let responseText = 'Error al obtener respuesta. Intentá nuevamente más tarde.';
-        const userDir = options.webserviceDir + user + '/';
-        const yamlFile = userDir + 'userdata.yml';
+        let responseText: string = 'Error al obtener respuesta. Intentá nuevamente más tarde.';
+        const userDir: string = options.webserviceDir + user + '/';
+        const yamlFile: string = userDir + 'userdata.yml';
         const yamlData: any = loadYaml(yamlFile) || {};
-        if ((messageText === '') && options.audio && media && media.mimetype.startsWith('audio/ogg')) {
-            const audioData = convertAudio(userDir + 'tmp.ogg', media.data, 'wav');
-            if (!audioData) throw new Error('Error al obtener audio.');
-            const audioResponse = await callAudio(options, audioData, 'wav');
-            if (audioResponse && !audioResponse.error) messageText = audioResponse.message;
-        }
-        const messageArray = messageText.split(' ');
+        const messageArray: string[] = messageText.split(' ');
         responseText = await commandMessage(messageText, userDir, yamlFile, yamlData, messageArray, options.useDefaultWebservice, options.defaultWebserviceDir, options.defaultWebserviceCuit, media ? media.data : '');
         if (options.useAi) {
             if (!responseText) {

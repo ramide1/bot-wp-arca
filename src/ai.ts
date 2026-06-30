@@ -33,43 +33,4 @@ const callAi = async (options: any, message: string, username: string) => {
     }
 };
 
-const callAudio = async (options: any, base64Data: string, audioFormat: string) => {
-    try {
-        const response = await fetch(options.url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + options.apiKey
-            },
-            body: JSON.stringify({
-                model: options.model,
-                reasoning_effort: options.reasoningEffort,
-                messages: [
-                    {
-                        role: 'user',
-                        content: [
-                            { type: 'text', text: options.audioInstructions },
-                            {
-                                type: 'input_audio',
-                                input_audio: {
-                                    data: base64Data,
-                                    format: audioFormat
-                                }
-                            }
-                        ]
-                    }
-                ],
-                max_tokens: options.maxTokens
-            })
-        });
-        if (!response.ok) throw new Error('Respuesta fallida del API');
-        const data: any = await response.json();
-        const responseText = data.choices[0].message.content || '';
-        if (responseText === '') throw new Error('Respuesta no esperada del API');
-        return { error: false, message: responseText };
-    } catch (error: any) {
-        return { error: true, message: error.message };
-    }
-};
-
-export { callAi, callAudio };
+export { callAi };
