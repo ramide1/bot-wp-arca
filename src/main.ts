@@ -5,18 +5,18 @@ import qrcode from 'qrcode';
 
 const commandPrefix: string = (process.env.COMMANDPREFIX !== undefined) ? process.env.COMMANDPREFIX : '!command';
 const options: any = {
-    webserviceDir: (process.env.WEBSERVICEDIR !== undefined) ? process.env.WEBSERVICEDIR : 'webservice/',
+    webserviceDir: (process.env.WEBSERVICEDIR !== undefined) ? process.env.WEBSERVICEDIR : 'data/webservice/',
     useAi: ((process.env.USEAI !== undefined) && (process.env.USEAI === 'true')) ? true : false,
     reasoningEffort: (process.env.REASONINGEFFORT !== undefined) ? process.env.REASONINGEFFORT : 'none',
     audio: ((process.env.AUDIO !== undefined) && (process.env.AUDIO === 'true')) ? true : false,
     url: (process.env.URL !== undefined) ? process.env.URL : 'https://api.openai.com/v1/chat/completions',
     model: (process.env.MODEL !== undefined) ? process.env.MODEL : 'gpt-4o-mini',
     apiKey: (process.env.APIKEY !== undefined) ? process.env.APIKEY : '',
-    historyFile: (process.env.HISTORYFILE !== undefined) ? process.env.HISTORYFILE : 'history.yml',
+    historyFile: (process.env.HISTORYFILE !== undefined) ? process.env.HISTORYFILE : 'data/history.yml',
     maxTokens: parseInt((process.env.MAXTOKENS !== undefined) ? process.env.MAXTOKENS : '800'),
     commandPrefix: commandPrefix,
     useDefaultWebservice: ((process.env.USEDEFAULTWEBSERVICE !== undefined) && (process.env.USEDEFAULTWEBSERVICE === 'true')) ? true : false,
-    defaultWebserviceDir: (process.env.DEFAULTWEBSERVICEDIR !== undefined) ? process.env.DEFAULTWEBSERVICEDIR : 'webservice/default/',
+    defaultWebserviceDir: (process.env.DEFAULTWEBSERVICEDIR !== undefined) ? process.env.DEFAULTWEBSERVICEDIR : 'data/webservice/default/',
     defaultWebserviceCuit: (process.env.DEFAULTWEBSERVICECUIT !== undefined) ? process.env.DEFAULTWEBSERVICECUIT : '',
     instructions: `La fecha actual es ${(new Date()).toISOString()} . 
 Eres un asistente en formato bot de WhatsApp especializado en trámites que interactúa con los servicios web de ARCA (Agencia de Recaudación y Control Aduanero) anteriormente conocido como AFIP de Argentina para realizar consultas y operaciones fiscales. 
@@ -57,7 +57,7 @@ Manejo de errores:
 const appPort: number = parseInt((process.env.APPPORT !== undefined) ? process.env.APPPORT : '3000');
 const appMasterKey: string = (process.env.MASTERKEY !== undefined) ? process.env.MASTERKEY : '';
 const appEndpoint: string = (process.env.APPENDPOINT !== undefined) ? process.env.APPENDPOINT : '';
-const clientsFile: string = (process.env.CLIENTSFILE !== undefined) ? process.env.CLIENTSFILE : 'clients.yml';
+const clientsFile: string = (process.env.CLIENTSFILE !== undefined) ? process.env.CLIENTSFILE : 'data/clients.yml';
 const onlyUserMessages = ((process.env.ONLYUSERMESSAGES !== undefined) && (process.env.ONLYUSERMESSAGES === 'true')) ? true : false;
 const browserPath: string = (process.env.BROWSERPATH !== undefined) ? process.env.BROWSERPATH : '';
 const cooldownTime: number = parseInt((process.env.COOLDOWNTIME !== undefined) ? process.env.COOLDOWNTIME : '5000');
