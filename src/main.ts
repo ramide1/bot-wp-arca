@@ -1,6 +1,6 @@
 import { Client, LocalAuth, type Message, MessageMedia } from 'whatsapp-web.js';
 import { processMessage } from './message';
-import { saveYaml, loadYaml } from './file';
+import { createSession, getSession, getSessions, deleteSession } from './db';
 import qrcode from 'qrcode';
 
 interface PuppeterConfig {
@@ -104,9 +104,9 @@ const createClient = (uuid: string, save: boolean = true) => {
 
         appSessions[uuid].client.initialize();
         if (save) {
-            const savedClients: any = loadYaml(clientsFile) || [];
-            savedClients.push(uuid);
-            if (!saveYaml(clientsFile, savedClients)) throw new Error('Error al guardar el cliente.');
+            const savedSession: any = getSession(uuid);
+            if (savedSession) throw new Error('La sesión ya existe.');
+            if (!createSession(uuid)) throw new Error('Error al guardar la sesión.');
         }
         return true;
     } catch (error: any) {
@@ -117,9 +117,9 @@ const createClient = (uuid: string, save: boolean = true) => {
 
 const deleteClient = (uuid: string) => {
     try {
-        const savedClients: any = loadYaml(clientsFile) || [];
-        const newData = savedClients.filter((client: string) => client != uuid);
-        if (!saveYaml(clientsFile, newData)) throw new Error('Error al borrar el cliente.');
+        const savedSession: any = getSession(uuid);
+        if (!savedSession) throw new Error('La sesión no existe.');
+        if (!deleteSession(uuid)) throw new Error('Error al borrar la sesión.');
         appSessions[uuid] = undefined;
         return true;
     } catch (error: any) {
@@ -303,7 +303,7 @@ const server: any = Bun.serve({
 });
 
 console.log(`Escuchando en ${server.url}`);
-const savedClients: any = loadYaml(clientsFile) || [];
-for (const client of savedClients) {
-    if (!createClient(client, false)) console.log('Error al crear el cliente guardado: ' + client);
+const savedSessions: any = getSessions();
+for (const session of savedSessions) {
+    if (!createClient(session.uuid, false)) console.log('Error al restaurar la sesión guardada: ' + session.uuid);
 }

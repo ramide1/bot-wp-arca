@@ -1,4 +1,6 @@
 import { Database } from "bun:sqlite";
+import { existsSync, mkdirSync } from 'fs';
+import path from 'path';
 
 interface UserData {
     user: string;
@@ -14,6 +16,7 @@ const appSqliteDatabase: string = process.env.APP_SQLITE_DATABASE ?? 'data/db.sq
 
 const getDb = () => {
     if (!connections.has(appSqliteDatabase)) {
+        if (!existsSync(path.dirname(appSqliteDatabase))) mkdirSync(path.dirname(appSqliteDatabase), { recursive: true });
         const db: Database = new Database(appSqliteDatabase, { create: true });
         db.run('CREATE TABLE IF NOT EXISTS chat_history (id INTEGER PRIMARY KEY AUTOINCREMENT, user TEXT NOT NULL, role TEXT NOT NULL, text_content TEXT, tool_call_id TEXT, function_name TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)');
         db.run('CREATE INDEX IF NOT EXISTS idx_chat_history_user ON chat_history(user)');
