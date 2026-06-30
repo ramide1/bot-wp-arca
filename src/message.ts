@@ -5,6 +5,7 @@ import { callAi } from "./ai";
 import { type MessageMedia } from "whatsapp-web.js";
 
 const appCommandPrefix: string = process.env.APP_COMMAND_PREFIX ?? '!command';
+const appUseOpenAiApi: boolean = ((process.env.APP_USE_OPENAI_API !== undefined) && (process.env.APP_USE_OPENAI_API === 'true')) ? true : false;
 
 const configuracion = async (messageArray: any[], yamlFile: string, yamlData: any, userDir: string, media: string = '') => {
     try {
@@ -377,7 +378,7 @@ const processMessage = async (options: any, user: string, messageText: string, m
         const yamlData: any = loadYaml(yamlFile) || {};
         const messageArray: string[] = messageText.split(' ');
         responseText = await commandMessage(messageText, userDir, yamlFile, yamlData, messageArray, options.useDefaultWebservice, options.defaultWebserviceDir, options.defaultWebserviceCuit, media ? media.data : '');
-        if (options.useAi) {
+        if (appUseOpenAiApi) {
             if (!responseText) {
                 const aiResponse = await callAi(options, messageText, user);
                 if (aiResponse && !aiResponse.error) {
