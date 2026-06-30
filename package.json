@@ -14,8 +14,7 @@
     "qrcode": "^1.5.4",
     "soap": "^1.9.3",
     "whatsapp-web.js": "^1.34.7",
-    "xmlbuilder2": "^4.0.3",
-    "yaml": "^2.9.0"
+    "xmlbuilder2": "^4.0.3"
   },
   "devDependencies": {
     "@types/bun": "latest",

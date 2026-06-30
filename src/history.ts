@@ -1,17 +1,17 @@
-import { parse, stringify } from 'yaml';
+import { YAML } from "bun";
 import { readFileSync, existsSync, writeFileSync } from 'fs';
 
 const saveHistory = (username: string, historyFile: string, message: string, response: string) => {
     let history: any = {};
     if (existsSync(historyFile)) {
         const fileContent = readFileSync(historyFile, 'utf8');
-        history = parse(fileContent) || {};
+        history = YAML.parse(fileContent) || {};
     }
 
     history[username] = history[username] || [];
     history[username].push({ message, response });
 
-    const newYamlContent = stringify(history);
+    const newYamlContent = YAML.stringify(history);
     writeFileSync(historyFile, newYamlContent, 'utf8');
     return;
 };
@@ -19,7 +19,7 @@ const saveHistory = (username: string, historyFile: string, message: string, res
 const loadHistory = (username: string, historyFile: string) => {
     if (existsSync(historyFile)) {
         const fileContent = readFileSync(historyFile, 'utf8');
-        const history = parse(fileContent) || {};
+        const history: any = YAML.parse(fileContent) || {};
         return history[username] || [];
     }
     return [];

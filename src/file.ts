@@ -1,4 +1,4 @@
-import { parse, stringify } from 'yaml';
+import { YAML } from "bun";
 import { readFileSync, existsSync, writeFileSync, mkdirSync, unlinkSync } from 'fs';
 import { dirname } from 'path';
 import { execSync } from 'child_process';
@@ -7,7 +7,7 @@ const saveYaml = (yamlFile: string, jsonData: any) => {
     try {
         const fileDir = dirname(yamlFile);
         if (!existsSync(fileDir)) mkdirSync(fileDir, { recursive: true });
-        const newYamlContent = stringify(jsonData);
+        const newYamlContent = YAML.stringify(jsonData);
         writeFileSync(yamlFile, newYamlContent, 'utf8');
         return true;
     } catch (error: any) {
@@ -19,7 +19,7 @@ const loadYaml = (yamlFile: string) => {
     try {
         if (!existsSync(yamlFile)) throw new Error('El archivo no existe');
         const fileContent = readFileSync(yamlFile, 'utf8');
-        return parse(fileContent);
+        return YAML.parse(fileContent);
     } catch (error: any) {
         return false;
     }

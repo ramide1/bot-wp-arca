@@ -372,7 +372,7 @@ const processMessage = async (options: any, user: string, messageText: string, m
         let responseText = 'Error al obtener respuesta. Intentá nuevamente más tarde.';
         const userDir = options.webserviceDir + user + '/';
         const yamlFile = userDir + 'userdata.yml';
-        const yamlData = loadYaml(yamlFile) || {};
+        const yamlData: any = loadYaml(yamlFile) || {};
         if ((messageText === '') && options.audio && media && media.mimetype.startsWith('audio/ogg')) {
             const audioData = convertAudio(userDir + 'tmp.ogg', media.data, 'wav');
             if (!audioData) throw new Error('Error al obtener audio.');

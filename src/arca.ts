@@ -15,8 +15,8 @@ const webservice = {
         'prod': 'https://servicios1.afip.gov.ar/wsfev1/service.asmx',
         'test': 'https://wswhomo.afip.gov.ar/wsfev1/service.asmx'
     },
-    'test': (process.env.TESTMODE !== undefined) ? process.env.TESTMODE : 'true',
-    'maxattempts': parseInt((process.env.MAXATTEMPTS !== undefined) ? process.env.MAXATTEMPTS : '3')
+    'test': ((process.env.TESTMODE !== undefined) && (process.env.TESTMODE == 'false')) ? false : true,
+    'maxattempts': parseInt(process.env.MAXATTEMPTS ?? '3')
 };
 
 const functionAttempts = async (functionAttempt: any) => {
@@ -98,7 +98,7 @@ const signTra = (service: string, currentDir: string, currentEnviroment: string)
 
 const getSoapClient = async (service: string, currentDir: string) => {
     return await functionAttempts(async () => {
-        const currentEnviroment = (webservice.test == 'false') ? 'prod' : 'test';
+        const currentEnviroment = (webservice.test === false) ? 'prod' : 'test';
         const serviceConfig = webservice[service as keyof typeof webservice];
         const wsdlFile = currentDir + service + '_' + currentEnviroment + '.wsdl';
         if (!checkWsdl(wsdlFile) && !(await downloadWsdl(wsdlFile, serviceConfig[currentEnviroment as keyof typeof serviceConfig] + '?wsdl'))) throw new Error('Error descargando wsdl');
@@ -120,7 +120,7 @@ const callWsaa = async (cms: any, currentDir: string) => {
 
 const getTa = async (service: string, currentDir: string) => {
     return await functionAttempts(async () => {
-        const currentEnviroment = (webservice.test == 'false') ? 'prod' : 'test';
+        const currentEnviroment = (webservice.test === false) ? 'prod' : 'test';
         const taFile = currentDir + 'TA_' + service + '_' + currentEnviroment + '.xml';
         if (existsSync(taFile)) {
             const taObject = convert(readFileSync(taFile, 'utf8'), { format: 'object' }) as any;

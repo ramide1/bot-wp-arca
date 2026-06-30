@@ -55,7 +55,7 @@ Manejo de errores:
     audioInstructions: 'Generar una transcripción del discurso.'
 };
 const appPort: number = parseInt((process.env.APPPORT !== undefined) ? process.env.APPPORT : '3000');
-const appMasterKey: string = (process.env.MASTERKEY !== undefined) ? process.env.MASTERKEY : '';
+const appMasterKeys: string[] = ((process.env.MASTERKEYS !== undefined) && (process.env.MASTERKEYS.includes(', '))) ? process.env.MASTERKEYS.trim().split(', ') : ((process.env.MASTERKEYS !== undefined) ? [process.env.MASTERKEYS.trim()] : []);
 const appEndpoint: string = (process.env.APPENDPOINT !== undefined) ? process.env.APPENDPOINT : '';
 const clientsFile: string = (process.env.CLIENTSFILE !== undefined) ? process.env.CLIENTSFILE : 'data/clients.yml';
 const onlyUserMessages = ((process.env.ONLYUSERMESSAGES !== undefined) && (process.env.ONLYUSERMESSAGES === 'true')) ? true : false;
@@ -107,7 +107,7 @@ const createClient = (uuid: string, save: boolean = true) => {
 
         appSessions[uuid].client.initialize();
         if (save) {
-            const savedClients = loadYaml(clientsFile) || [];
+            const savedClients: any = loadYaml(clientsFile) || [];
             savedClients.push(uuid);
             if (!saveYaml(clientsFile, savedClients)) throw new Error('Error al guardar el cliente.');
         }
@@ -120,7 +120,7 @@ const createClient = (uuid: string, save: boolean = true) => {
 
 const deleteClient = (uuid: string) => {
     try {
-        const savedClients = loadYaml(clientsFile) || [];
+        const savedClients: any = loadYaml(clientsFile) || [];
         const newData = savedClients.filter((client: string) => client != uuid);
         if (!saveYaml(clientsFile, newData)) throw new Error('Error al borrar el cliente.');
         appSessions[uuid] = undefined;
@@ -292,7 +292,7 @@ const server: any = Bun.serve({
             const data: any = await req.json();
             const uuid: string = data.uuid;
             try {
-                if ((appMasterKey != '') && (!data.masterkey || (data.masterkey != appMasterKey))) throw new Error('Clave no informada.');
+                if ((appMasterKeys.length !== 0) && (!data.masterkey || !appMasterKeys.includes(data.masterkey))) throw new Error('Clave no informada.');
                 if (appSessions[uuid] === undefined) throw new Error('Ocurrió un error al obtener el uuid. Por favor intenta nuevamente.');
                 if (!deleteClient(uuid)) throw new Error('Error al borrar el cliente.');
                 return Response.json({ error: false, message: '¡QR borrado con exito!', uuid: uuid });
@@ -306,7 +306,7 @@ const server: any = Bun.serve({
 });
 
 console.log(`Escuchando en ${server.url}`);
-const savedClients = loadYaml(clientsFile) || [];
-savedClients.forEach((e: any) => {
-    if (!createClient(e, false)) console.log('Error al crear el cliente guardado: ' + e);
-});
+const savedClients: any = loadYaml(clientsFile) || [];
+for (const client of savedClients) {
+    if (!createClient(client, false)) console.log('Error al crear el cliente guardado: ' + client);
+}
