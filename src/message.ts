@@ -4,6 +4,8 @@ import { saveHistory } from "./history";
 import { callAi } from "./ai";
 import { type MessageMedia } from "whatsapp-web.js";
 
+const appCommandPrefix: string = process.env.APP_COMMAND_PREFIX ?? '!command';
+
 const configuracion = async (messageArray: any[], yamlFile: string, yamlData: any, userDir: string, media: string = '') => {
     try {
         if (messageArray.length < 2) throw new Error('Por favor enviá el parametro a configurar.');
@@ -379,8 +381,8 @@ const processMessage = async (options: any, user: string, messageText: string, m
             if (!responseText) {
                 const aiResponse = await callAi(options, messageText, user);
                 if (aiResponse && !aiResponse.error) {
-                    if (aiResponse.message.includes(options.commandPrefix)) {
-                        const aiResponseArray = aiResponse.message.split(options.commandPrefix);
+                    if (aiResponse.message.includes(appCommandPrefix)) {
+                        const aiResponseArray = aiResponse.message.split(appCommandPrefix);
                         const aiCommand = aiResponseArray[aiResponseArray.length - 1].trim().toLowerCase();
                         const aiArray = aiCommand.split(' ');
                         responseText = await commandMessage(aiCommand, userDir, yamlFile, yamlData, aiArray, options.useDefaultWebservice, options.defaultWebserviceDir, options.defaultWebserviceCuit, media ? media.data : '');
@@ -394,7 +396,7 @@ const processMessage = async (options: any, user: string, messageText: string, m
                 saveHistory(user, options.historyFile, messageText, responseText);
             }
         } else {
-            if (!responseText) throw new Error('Comando no reconocido. Envía "' + options.commandPrefix + ' ayuda" para ver opciones.');
+            if (!responseText) throw new Error('Comando no reconocido. Envía "' + appCommandPrefix + ' ayuda" para ver opciones.');
         }
         return responseText;
     } catch (error: any) {

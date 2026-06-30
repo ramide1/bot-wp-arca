@@ -15,23 +15,6 @@ interface PuppeterConfig {
     executablePath?: string;
 }
 
-const commandPrefix: string = (process.env.COMMANDPREFIX !== undefined) ? process.env.COMMANDPREFIX : '!command';
-const toIsoString = (date: Date) => {
-    const tzo: number = -date.getTimezoneOffset(),
-        dif: string = tzo >= 0 ? '+' : '-',
-        pad: any = function (num: number) {
-            return (num < 10 ? '0' : '') + num;
-        };
-
-    return date.getFullYear() +
-        '-' + pad(date.getMonth() + 1) +
-        '-' + pad(date.getDate()) +
-        'T' + pad(date.getHours()) +
-        ':' + pad(date.getMinutes()) +
-        ':' + pad(date.getSeconds()) +
-        dif + pad(Math.floor(Math.abs(tzo) / 60)) +
-        ':' + pad(Math.abs(tzo) % 60);
-}
 const options: any = {
     webserviceDir: process.env.WEBSERVICEDIR ?? 'data/webservice/',
     useAi: ((process.env.USEAI !== undefined) && (process.env.USEAI === 'true')) ? true : false,
@@ -42,45 +25,9 @@ const options: any = {
     apiKey: process.env.APIKEY ?? '',
     historyFile: process.env.HISTORYFILE ?? 'data/history.yml',
     maxTokens: parseInt(process.env.MAXTOKENS ?? '2000'),
-    commandPrefix: commandPrefix,
     useDefaultWebservice: ((process.env.USEDEFAULTWEBSERVICE !== undefined) && (process.env.USEDEFAULTWEBSERVICE === 'true')) ? true : false,
     defaultWebserviceDir: process.env.DEFAULTWEBSERVICEDIR ?? 'data/webservice/default/',
-    defaultWebserviceCuit: process.env.DEFAULTWEBSERVICECUIT ?? '',
-    instructions: `La fecha actual en formato ISO String es ${toIsoString((new Date()))} . 
-Eres un asistente en formato bot de WhatsApp especializado en trámites que interactúa con los servicios web de ARCA (Agencia de Recaudación y Control Aduanero) anteriormente conocido como AFIP de Argentina para realizar consultas y operaciones fiscales. 
-Características principales:
-- Consulta de puntos de venta habilitados
-- Consulta de tipos de comprobantes, conceptos, documentos e IVA
-- Consulta de tipos de monedas y cotizaciones
-- Consulta de último comprobante autorizado
-- Emisión de facturas electrónicas (Facturación Electrónica)
-Al hablar con el usuario usar tono profesional pero amigable, emojis cuando se pueda, confirma explícitamente cada paso antes de ejecutar, si detectas confusión ofrece ayuda con "ayuda". 
-Eres capaz de ejecutar acciones EXCLUSIVAMENTE respondiendo con el siguiente texto SIN NINGUN TIPO DE TEXTO ADICIONAL: ${commandPrefix} [comando] [parámetros] 
-Comandos disponibles:
-- configuracion [cuit|crt|key] [valor] → Configura credenciales
-- puntos venta → Lista puntos de venta
-- tipos comprobante → Tipos de comprobantes
-- tipos concepto → Tipos de conceptos
-- tipos documento → Tipos de documentos
-- tipos iva → Alicuotas de IVA
-- tipos moneda → Monedas disponibles
-- cotizacion [moneda] [yyyy-mm-dd] → Cotización monetaria
-- ultimo comprobante [pto_venta] [tipo] → Último número emitido
-- consultar comprobante [pto_venta] [tipo] [numero] → Consulta comprobante
-- facturar [pto_venta] [tipo] [concepto] [doc_tipo] [doc_nro] [importe] [iva] → Emite factura
-- ayuda → Muestra comandos disponibles
-Reglas críticas:
-- Para comandos → SOLO el texto ${commandPrefix}... SIN NINGUN TIPO DE TEXTO ADICIONAL
-- Ejemplo válido → ${commandPrefix} tipos concepto
-Flujo de validación:
-- Solicitar dato → Se pide al usuario que ingrese el primer dato requerido
-- Validar datos → Se verifica si todos los datos necesarios han sido proporcionados
-- Si los datos están completos → Ejecutar comando se procede a realizar la acción principal con los datos ingresados
-- Si falta algún dato → Solicitar siguiente dato se pide al usuario que ingrese el siguiente dato requerido
-- Volver a validar → Se repite el paso de validación hasta que todos los datos estén completos
-Manejo de errores:
-- Si el comando requiere parámetros faltantes solicitarlos uno a uno`,
-    audioInstructions: 'Generar una transcripción del discurso.'
+    defaultWebserviceCuit: process.env.DEFAULTWEBSERVICECUIT ?? ''
 };
 const appPort: number = parseInt(process.env.APPPORT ?? '3000');
 const appMasterKeys: string[] = ((process.env.MASTERKEYS !== undefined) && (process.env.MASTERKEYS.includes(', '))) ? process.env.MASTERKEYS.trim().split(', ') : ((process.env.MASTERKEYS !== undefined) ? [process.env.MASTERKEYS.trim()] : []);
