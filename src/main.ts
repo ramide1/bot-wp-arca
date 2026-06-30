@@ -32,7 +32,6 @@ const options: any = {
 const appPort: number = parseInt(process.env.APPPORT ?? '3000');
 const appMasterKeys: string[] = ((process.env.MASTERKEYS !== undefined) && (process.env.MASTERKEYS.includes(', '))) ? process.env.MASTERKEYS.trim().split(', ') : ((process.env.MASTERKEYS !== undefined) ? [process.env.MASTERKEYS.trim()] : []);
 const appEndpoint: string = process.env.APPENDPOINT ?? '';
-const clientsFile: string = process.env.CLIENTSFILE ?? 'data/clients.yml';
 const onlyUserMessages = ((process.env.ONLYUSERMESSAGES !== undefined) && (process.env.ONLYUSERMESSAGES === 'true')) ? true : false;
 const browserPath: string = process.env.BROWSERPATH ?? '';
 const cooldownTime: number = parseInt(process.env.COOLDOWNTIME ?? '5000');
