@@ -83,7 +83,8 @@ const createClient = (uuid: string, save: boolean = true) => {
 
         appSessions[uuid].client.on('message_create', async (message: any) => {
             if (onlyUserMessages && (!message.fromMe || (message.to != message.from))) return;
-            const user = message.from.split('@')[0];
+            const contact: any = await appSessions[uuid].client.getContactLidAndPhone([message.from]);
+            const user: string = contact?.[0]?.pn ?? message.from.split('@')[0];
             if (appSessions[uuid].lastsenttimestamp[user] === undefined) appSessions[uuid].lastsenttimestamp[user] = 0;
             if ((Date.now() - appSessions[uuid].lastsenttimestamp[user]) < cooldownTime) return;
             try {
@@ -122,6 +123,7 @@ const deleteClient = (uuid: string) => {
 };
 
 const server: any = Bun.serve({
+    port: appPort,
     async fetch(req) {
         const path = new URL(req.url).pathname;
 
