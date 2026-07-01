@@ -16,7 +16,6 @@ interface PuppeterConfig {
 }
 
 const options: any = {
-    webserviceDir: process.env.WEBSERVICEDIR ?? 'data/webservice/',
     reasoningEffort: process.env.REASONINGEFFORT ?? 'none',
     audio: ((process.env.AUDIO !== undefined) && (process.env.AUDIO === 'true')) ? true : false,
     url: process.env.URL ?? 'https://api.openai.com/v1/chat/completions',

@@ -10,7 +10,7 @@ services:
     volumes:
       - ./data:/app/data
     environment:
-      WEBSERVICEDIR: "${WEBSERVICEDIR}"
+      ARCA_WEBSERVICE_DIR: "${ARCA_WEBSERVICE_DIR}"
       TESTMODE: "${TESTMODE}"
       COOLDOWNTIME: "${COOLDOWNTIME}"
       MAXATTEMPTS: "${MAXATTEMPTS}"

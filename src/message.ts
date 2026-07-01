@@ -6,6 +6,7 @@ import { type MessageMedia } from "whatsapp-web.js";
 
 const appCommandPrefix: string = process.env.APP_COMMAND_PREFIX ?? '!command';
 const appUseOpenAiApi: boolean = ((process.env.APP_USE_OPENAI_API !== undefined) && (process.env.APP_USE_OPENAI_API === 'true')) ? true : false;
+const arcaWebserviceDir: string = process.env.ARCA_WEBSERVICE_DIR ?? 'data/webservice/';
 
 const configuracion = async (messageArray: any[], yamlFile: string, yamlData: any, userDir: string, media: string = '') => {
     try {
@@ -373,7 +374,7 @@ const commandMessage = async (messageText: string, userDir: string, yamlFile: st
 const processMessage = async (options: any, user: string, messageText: string, media: MessageMedia | null) => {
     try {
         let responseText: string = 'Error al obtener respuesta. Intentá nuevamente más tarde.';
-        const userDir: string = options.webserviceDir + user + '/';
+        const userDir: string = arcaWebserviceDir + user + '/';
         const yamlFile: string = userDir + 'userdata.yml';
         const yamlData: any = loadYaml(yamlFile) || {};
         const messageArray: string[] = messageText.split(' ');
